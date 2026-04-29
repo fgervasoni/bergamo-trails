@@ -1,7 +1,7 @@
 {
-  "name": "My PWA App",
-  "short_name": "App",
-  "description": "A Progressive Web App",
+  "name": "Bergamo Trails",
+  "short_name": "Bergamo Trails",
+  "description": "Bergamo Trails è un'applicazione web che consente di esplorare i sentieri e i rifugi della provincia di Bergamo, in Italia. L'app offre una mappa interattiva con informazioni dettagliate sui sentieri, i rifugi e le attrazioni turistiche della zona.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
