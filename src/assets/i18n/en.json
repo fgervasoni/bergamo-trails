@@ -1,0 +1,66 @@
+{
+  "loading": {
+    "title": "Bergamo Trails",
+    "message": "Loading trail map..."
+  },
+  "panel": {
+    "brand": "Bergamo Trails",
+    "subtitle": "Trails and Shelters",
+    "close": "Close panel",
+    "open": "Open panel"
+  },
+  "section": {
+    "search": "Search",
+    "basemap": "Basemap",
+    "settings": "Settings"
+  },
+  "search": {
+    "placeholder": "Search trail, shelter or address...",
+    "clear": "Clear search",
+    "trail": "Trail",
+    "shelter": "Shelter",
+    "address": "Address"
+  },
+  "locate": {
+    "label": "Locate me",
+    "error": "Not available",
+    "title": "Go to your position",
+    "errorTitle": "Unable to locate you"
+  },
+  "basemap": {
+    "topographic": "Topographic",
+    "satellite": "Satellite",
+    "streets": "Streets"
+  },
+  "legend": {
+    "title": "Legend",
+    "trails": "Trails",
+    "shelters": "Shelters",
+    "t": "T: Tourist",
+    "e": "E: Hiking",
+    "ee": "EE: Expert Hikers",
+    "eea": "EEA: Equipped",
+    "shelter": "Shelter"
+  },
+  "popup": {
+    "close": "Close",
+    "details": "Details",
+    "trail": "Trail",
+    "caiNumber": "CAI Number",
+    "difficulty": "Difficulty",
+    "name": "Name",
+    "ownership": "Ownership",
+    "altitude": "Altitude"
+  },
+  "settings": {
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "footer": {
+    "dataSource": "Data:"
+  }
+}
+

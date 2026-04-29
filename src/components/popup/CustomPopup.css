@@ -1,0 +1,117 @@
+.cai-popup-card {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 90;
+    width: calc(100% - 32px);
+    max-width: 380px;
+    background: var(--popup-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 14px;
+    box-shadow: var(--shadow-popup);
+    overflow: hidden;
+    pointer-events: auto;
+    animation: cai-slideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cai-popup-card.cai-popup-closing {
+    animation: cai-slideOut 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes cai-slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@keyframes cai-slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+}
+
+.cai-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 10px;
+    background: linear-gradient(135deg, #1a472a, #2d6a4f);
+    color: white;
+}
+
+.cai-popup-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.cai-popup-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.cai-popup-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.cai-popup-body {
+    padding: 10px 14px 14px;
+}
+
+.cai-popup-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-section);
+}
+
+.cai-popup-field:last-child {
+    border-bottom: none;
+}
+
+.cai-popup-field-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cai-popup-field-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+@media (max-width: 540px) {
+    .cai-popup-card {
+        bottom: auto;
+        top: 24px;
+        height: min-content;
+        width: calc(100% - 16px);
+    }
+}
+

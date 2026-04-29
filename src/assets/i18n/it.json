@@ -1,0 +1,66 @@
+{
+  "loading": {
+    "title": "Bergamo Trails",
+    "message": "Caricamento mappa sentieri..."
+  },
+  "panel": {
+    "brand": "Bergamo Trails",
+    "subtitle": "Sentieri e Rifugi",
+    "close": "Chiudi pannello",
+    "open": "Apri pannello"
+  },
+  "section": {
+    "search": "Cerca",
+    "basemap": "Mappa base",
+    "settings": "Impostazioni"
+  },
+  "search": {
+    "placeholder": "Cerca sentiero, rifugio o indirizzo...",
+    "clear": "Cancella ricerca",
+    "trail": "Sentiero",
+    "shelter": "Rifugio",
+    "address": "Indirizzo"
+  },
+  "locate": {
+    "label": "Localizzami",
+    "error": "Non disponibile",
+    "title": "Vai alla tua posizione",
+    "errorTitle": "Impossibile localizzarti"
+  },
+  "basemap": {
+    "topographic": "Topografica",
+    "satellite": "Satellite",
+    "streets": "Stradale"
+  },
+  "legend": {
+    "title": "Legenda",
+    "trails": "Sentieri",
+    "shelters": "Rifugi",
+    "t": "T: Turistico",
+    "e": "E: Escursionistico",
+    "ee": "EE: Escursionisti Esperti",
+    "eea": "EEA: Attrezzato",
+    "shelter": "Rifugio"
+  },
+  "popup": {
+    "close": "Chiudi",
+    "details": "Dettagli",
+    "trail": "Sentiero",
+    "caiNumber": "Numero CAI",
+    "difficulty": "Difficoltà",
+    "name": "Nome",
+    "ownership": "Proprietà",
+    "altitude": "Quota"
+  },
+  "settings": {
+    "language": "Lingua",
+    "theme": "Tema",
+    "light": "Chiaro",
+    "dark": "Scuro",
+    "system": "Sistema"
+  },
+  "footer": {
+    "dataSource": "Dati:"
+  }
+}
+

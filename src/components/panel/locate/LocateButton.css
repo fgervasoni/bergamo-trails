@@ -1,0 +1,33 @@
+.cai-locate-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 10px;
+    background: var(--bg-input);
+    color: var(--text-heading);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.cai-locate-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    color: var(--accent-text);
+}
+
+.cai-locate-btn:active:not(:disabled) { background: var(--clear-btn-hover); }
+.cai-locate-btn:disabled { cursor: wait; opacity: 0.7; }
+
+.cai-locate-btn.error {
+    background: var(--error-bg);
+    color: var(--error-color);
+}
+
+.cai-locate-btn .cai-spinning {
+    animation: cai-spin 1s linear infinite;
+}
+
