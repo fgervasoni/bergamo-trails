@@ -66,14 +66,27 @@ export function buildPopupData(attrs, layerTitle, t) {
 
     const featureId = attrs.id ?? null;
 
-    // Campi dinamici: usa il model per determinare ordine, visibilità, editabilità
-    const fields = Object.entries(attrs)
-        .filter(([key]) => !shouldSkip(key, model) && key !== titleField)
-        .map(([key, value]) => ({
-            key,
-            label: fieldLabels[key] || fieldToLabel(key),
-            value: formatValue(key, value, model)
-        }));
+    // Campi dinamici: usa il model per determinare ordine e visibilità.
+    // Se c'è un model, mostra TUTTI i campi visibili (anche null) nell'ordine del model.
+    // Se non c'è model, fallback su Object.entries.
+    let fields;
+    if (model) {
+        fields = Object.keys(model.fields)
+            .filter(key => !shouldSkip(key, model) && key !== titleField)
+            .map(key => ({
+                key,
+                label: fieldLabels[key] || fieldToLabel(key),
+                value: formatValue(key, attrs[key], model)
+            }));
+    } else {
+        fields = Object.entries(attrs)
+            .filter(([key]) => !shouldSkip(key, model) && key !== titleField)
+            .map(([key, value]) => ({
+                key,
+                label: fieldLabels[key] || fieldToLabel(key),
+                value: formatValue(key, value, model)
+            }));
+    }
 
     return { title, fields, editable, featureId, layerTitle };
 }

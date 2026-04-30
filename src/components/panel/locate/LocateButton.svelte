@@ -144,68 +144,68 @@
 
         layer.addMany([dot]);
 
-        // if (heading != null && !isNaN(heading)) {
-        const directionCone = new Graphic({
-            geometry: point,
-            symbol: new CIMSymbol({
-                data: {
-                    type: 'CIMSymbolReference',
-                    symbol: {
-                        type: 'CIMPointSymbol',
-                        symbolLayers: [
-                            {
-                                type: 'CIMVectorMarker',
-                                enable: true,
-                                anchorPoint: {x: 0, y: 0},
-                                anchorPointUnits: 'Relative',
-                                size: 48,
-                                rotation: heading ?? 0,
-                                rotateClockwise: true,
-                                frame: {xmin: 0, ymin: 0, xmax: 100, ymax: 100},
-                                markerGraphics: [
-                                    {
-                                        type: 'CIMMarkerGraphic',
-                                        geometry: {
-                                            rings: [
-                                                (() => {
-                                                    // Genera un arco di ~70 gradi con molti punti per un bordo liscio
-                                                    const cx = 50, cy = 48, r = 48;
-                                                    const startAngle = 40; // gradi (da verticale)
-                                                    const endAngle = 100;
-                                                    const steps = 20;
-                                                    const pts = [[cx, cy]];
-                                                    for (let i = 0; i <= steps; i++) {
-                                                        const a = (startAngle + (endAngle - startAngle) * i / steps) * Math.PI / 180;
-                                                        pts.push([
-                                                            cx + r * Math.cos(a),
-                                                            cy + r * Math.sin(a)
-                                                        ]);
+        if (heading != null && !isNaN(heading)) {
+            const directionCone = new Graphic({
+                geometry: point,
+                symbol: new CIMSymbol({
+                    data: {
+                        type: 'CIMSymbolReference',
+                        symbol: {
+                            type: 'CIMPointSymbol',
+                            symbolLayers: [
+                                {
+                                    type: 'CIMVectorMarker',
+                                    enable: true,
+                                    anchorPoint: {x: 0, y: 0},
+                                    anchorPointUnits: 'Relative',
+                                    size: 48,
+                                    rotation: heading ?? 0,
+                                    rotateClockwise: true,
+                                    frame: {xmin: 0, ymin: 0, xmax: 100, ymax: 100},
+                                    markerGraphics: [
+                                        {
+                                            type: 'CIMMarkerGraphic',
+                                            geometry: {
+                                                rings: [
+                                                    (() => {
+                                                        // Genera un arco di ~70 gradi con molti punti per un bordo liscio
+                                                        const cx = 50, cy = 48, r = 48;
+                                                        const startAngle = 40; // gradi (da verticale)
+                                                        const endAngle = 100;
+                                                        const steps = 20;
+                                                        const pts = [[cx, cy]];
+                                                        for (let i = 0; i <= steps; i++) {
+                                                            const a = (startAngle + (endAngle - startAngle) * i / steps) * Math.PI / 180;
+                                                            pts.push([
+                                                                cx + r * Math.cos(a),
+                                                                cy + r * Math.sin(a)
+                                                            ]);
+                                                        }
+                                                        pts.push([cx, cy]);
+                                                        return pts;
+                                                    })()
+                                                ]
+                                            },
+                                            symbol: {
+                                                type: 'CIMPolygonSymbol',
+                                                symbolLayers: [
+                                                    {
+                                                        type: 'CIMSolidFill',
+                                                        enable: true,
+                                                        color: [66, 133, 244, 50]
                                                     }
-                                                    pts.push([cx, cy]);
-                                                    return pts;
-                                                })()
-                                            ]
-                                        },
-                                        symbol: {
-                                            type: 'CIMPolygonSymbol',
-                                            symbolLayers: [
-                                                {
-                                                    type: 'CIMSolidFill',
-                                                    enable: true,
-                                                    color: [66, 133, 244, 50]
-                                                }
-                                            ]
+                                                ]
+                                            }
                                         }
-                                    }
-                                ]
-                            }
-                        ]
+                                    ]
+                                }
+                            ]
+                        }
                     }
-                }
-            })
-        });
-        layer.add(directionCone);
-        // }
+                })
+            });
+            layer.add(directionCone);
+        }
     }
 </script>
 

@@ -69,7 +69,23 @@
     "theme": "Tema",
     "light": "Chiaro",
     "dark": "Scuro",
-    "system": "Sistema"
+    "system": "Sistema",
+    "account": "Account"
+  },
+  "auth": {
+    "login": "Accedi",
+    "logout": "Esci",
+    "register": "Registrati",
+    "email": "Email",
+    "password": "Password",
+    "loggingIn": "Accesso...",
+    "registering": "Registrazione...",
+    "loginError": "Credenziali non valide",
+    "registerError": "Errore nella registrazione",
+    "confirmEmail": "Controlla la tua email per confermare l'account",
+    "loggedAs": "Connesso come",
+    "switchToRegister": "Non hai un account?",
+    "switchToLogin": "Hai già un account?"
   },
   "footer": {
     "dataSource": "Dati:"

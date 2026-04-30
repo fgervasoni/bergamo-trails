@@ -6,17 +6,27 @@
     import BasemapSwitcher from './components/panel/basemap/BasemapSwitcher.svelte';
     import Legend from './components/panel/legend/Legend.svelte';
     import CustomPopup from './components/popup/CustomPopup.svelte';
-    import {Loader, Monitor, Moon, Mountain, Settings, Sun, X} from 'lucide-svelte';
+    import {Loader, LogIn, LogOut, Monitor, Moon, Mountain, Settings, Sun, X} from 'lucide-svelte';
     import {availableLocales, getT, i18n, setLocale} from './assets/i18n/i18n.svelte.js';
     import {uiState} from './stores/mapStore.svelte.js';
     import {initTheme, setTheme, themeState} from './stores/themeStore.svelte.js';
+    import {authState, initAuth, login, logout, register} from './stores/authStore.svelte.js';
     import {onMount} from 'svelte';
 
     let t = $derived(getT());
     let loading = $state(true);
 
+    // Auth form state
+    let authEmail = $state('');
+    let authPassword = $state('');
+    let authLoading = $state(false);
+    let authError = $state('');
+    let authMode = $state('login'); // 'login' | 'register'
+    let authSuccess = $state('');
+
     onMount(() => {
         initTheme();
+        initAuth();
     });
 
     function onMapReady() {
@@ -28,6 +38,51 @@
         {mode: 'dark', icon: Moon, labelKey: 'dark'},
         {mode: 'system', icon: Monitor, labelKey: 'system'},
     ];
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        if (!authEmail.trim() || !authPassword) return;
+        authLoading = true;
+        authError = '';
+        authSuccess = '';
+        const result = await login(authEmail.trim(), authPassword);
+        if (!result.success) {
+            authError = t.auth.loginError;
+        } else {
+            authEmail = '';
+            authPassword = '';
+        }
+        authLoading = false;
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        if (!authEmail.trim() || !authPassword) return;
+        authLoading = true;
+        authError = '';
+        authSuccess = '';
+        const result = await register(authEmail.trim(), authPassword);
+        if (!result.success) {
+            authError = t.auth.registerError;
+        } else if (result.needsConfirmation) {
+            authSuccess = t.auth.confirmEmail;
+            authPassword = '';
+        } else {
+            authEmail = '';
+            authPassword = '';
+        }
+        authLoading = false;
+    }
+
+    function switchAuthMode() {
+        authMode = authMode === 'login' ? 'register' : 'login';
+        authError = '';
+        authSuccess = '';
+    }
+
+    async function handleLogout() {
+        await logout();
+    }
 </script>
 
 {#if loading}
@@ -127,6 +182,60 @@
                                     </button>
                                 {/each}
                             </div>
+                        </div>
+                        <div class="cai-settings-row cai-auth-row">
+                            <span class="cai-settings-row-label">{t.settings.account}</span>
+                            {#if authState.user}
+                                <div class="cai-auth-logged">
+                                    <span class="cai-auth-email" title={authState.user.email}>{authState.user.email}</span>
+                                    <button class="cai-auth-logout-btn" onclick={handleLogout} aria-label={t.auth.logout} title={t.auth.logout}>
+                                        <LogOut size={14} strokeWidth={2}/>
+                                    </button>
+                                </div>
+                            {:else}
+                                <form class="cai-auth-form" onsubmit={authMode === 'login' ? handleLogin : handleRegister}>
+                                    <input
+                                        class="cai-auth-input"
+                                        type="email"
+                                        placeholder={t.auth.email}
+                                        bind:value={authEmail}
+                                        disabled={authLoading}
+                                        required
+                                        autocomplete="email"
+                                    />
+                                    <input
+                                        class="cai-auth-input"
+                                        type="password"
+                                        placeholder={t.auth.password}
+                                        bind:value={authPassword}
+                                        disabled={authLoading}
+                                        required
+                                        autocomplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                                        minlength={authMode === 'register' ? 6 : undefined}
+                                    />
+                                    {#if authError}
+                                        <span class="cai-auth-error">{authError}</span>
+                                    {/if}
+                                    {#if authSuccess}
+                                        <span class="cai-auth-success">{authSuccess}</span>
+                                    {/if}
+                                    <button class="cai-auth-login-btn" type="submit" disabled={authLoading}>
+                                        {#if authLoading}
+                                            <Loader size={14} strokeWidth={2} class="cai-spinning"/>
+                                        {:else}
+                                            <LogIn size={14} strokeWidth={2}/>
+                                        {/if}
+                                        {#if authMode === 'login'}
+                                            {authLoading ? t.auth.loggingIn : t.auth.login}
+                                        {:else}
+                                            {authLoading ? t.auth.registering : t.auth.register}
+                                        {/if}
+                                    </button>
+                                    <button type="button" class="cai-auth-switch" onclick={switchAuthMode}>
+                                        {authMode === 'login' ? t.auth.switchToRegister : t.auth.switchToLogin}
+                                    </button>
+                                </form>
+                            {/if}
                         </div>
                     </div>
                 {/if}

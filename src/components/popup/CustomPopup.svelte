@@ -5,6 +5,7 @@
     import {getT} from '../../assets/i18n/i18n.svelte.js';
     import {updateRifugio} from '../../services/trailsService.js';
     import {getModel, castValue, inputTypeFor} from '../../models/schema.js';
+    import {authState} from '../../stores/authStore.svelte.js';
 
     let t = $derived(getT());
 
@@ -125,7 +126,7 @@
         <div class="cai-popup-header">
             <span class="cai-popup-title">{cachedTitle}</span>
             <div class="cai-popup-header-actions">
-                {#if cachedEditable && !editing}
+                {#if cachedEditable && !editing && authState.user}
                     <button class="cai-popup-edit" onclick={startEdit} aria-label={t.popup.edit} title={t.popup.edit}>
                         <Pencil size={13} strokeWidth={2}/>
                     </button>
