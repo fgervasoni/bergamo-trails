@@ -15,10 +15,11 @@
     "settings": "Impostazioni"
   },
   "search": {
-    "placeholder": "Cerca sentiero, rifugio o indirizzo...",
+    "placeholder": "Cerca sentiero, rifugio, vetta o indirizzo...",
     "clear": "Cancella ricerca",
     "trail": "Sentiero",
     "shelter": "Rifugio",
+    "peak": "Vetta",
     "address": "Indirizzo"
   },
   "locate": {
@@ -42,19 +43,30 @@
     "e": "E: Escursionistico",
     "ee": "EE: Escursionisti Esperti",
     "eea": "EEA: Attrezzato",
-    "shelter": "Rifugio"
+    "shelter": "Rifugio",
+    "peaks": "Vette",
+    "peak": "Vetta"
   },
   "popup": {
     "close": "Chiudi",
     "details": "Dettagli",
     "trail": "Sentiero",
     "shelter": "Rifugio",
+    "peak": "Vetta",
     "edit": "Modifica",
     "save": "Salva",
     "cancel": "Annulla",
     "saving": "Salvataggio...",
     "saveSuccess": "Salvato!",
     "saveError": "Errore nel salvataggio",
+    "delete": "Elimina",
+    "deleting": "Eliminazione...",
+    "deleteConfirm": "Sei sicuro di voler eliminare?",
+    "deleteSuccess": "Eliminato!",
+    "deleteError": "Errore nell'eliminazione",
+    "coordinates": "Coordinate",
+    "latitude": "Latitudine",
+    "longitude": "Longitudine",
     "fieldLabels": {
       "numero_cai": "Numero CAI",
       "difficolta": "Difficoltà",
@@ -89,6 +101,15 @@
   },
   "footer": {
     "dataSource": "Dati:"
+  },
+  "addFeature": {
+    "title": "Aggiungi",
+    "rifugio": "Nuovo Rifugio",
+    "vetta": "Nuova Vetta",
+    "position": "Posizione",
+    "pickPosition": "Seleziona sulla mappa",
+    "changePosition": "Cambia posizione",
+    "add": "Aggiungi"
   }
 }
 

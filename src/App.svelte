@@ -5,6 +5,7 @@
     import LocateButton from './components/panel/locate/LocateButton.svelte';
     import BasemapSwitcher from './components/panel/basemap/BasemapSwitcher.svelte';
     import Legend from './components/panel/legend/Legend.svelte';
+    import AddFeature from './components/panel/add/AddFeature.svelte';
     import CustomPopup from './components/popup/CustomPopup.svelte';
     import {Loader, LogIn, LogOut, Monitor, Moon, Mountain, Settings, Sun, X} from 'lucide-svelte';
     import {availableLocales, getT, i18n, setLocale} from './assets/i18n/i18n.svelte.js';
@@ -130,13 +131,18 @@
                 </div>
             </section>
 
+
             <section class="cai-section">
-                <span class="cai-section-label">{t.section.basemap}</span>
-                <BasemapSwitcher/>
+                <AddFeature/>
             </section>
 
             <section class="cai-section">
                 <Legend/>
+            </section>
+
+            <section class="cai-section">
+                <span class="cai-section-label">{t.section.basemap}</span>
+                <BasemapSwitcher/>
             </section>
         </div>
 
@@ -187,31 +193,34 @@
                             <span class="cai-settings-row-label">{t.settings.account}</span>
                             {#if authState.user}
                                 <div class="cai-auth-logged">
-                                    <span class="cai-auth-email" title={authState.user.email}>{authState.user.email}</span>
-                                    <button class="cai-auth-logout-btn" onclick={handleLogout} aria-label={t.auth.logout} title={t.auth.logout}>
+                                    <span class="cai-auth-email"
+                                          title={authState.user.email}>{authState.user.email}</span>
+                                    <button class="cai-auth-logout-btn" onclick={handleLogout}
+                                            aria-label={t.auth.logout} title={t.auth.logout}>
                                         <LogOut size={14} strokeWidth={2}/>
                                     </button>
                                 </div>
                             {:else}
-                                <form class="cai-auth-form" onsubmit={authMode === 'login' ? handleLogin : handleRegister}>
+                                <form class="cai-auth-form"
+                                      onsubmit={authMode === 'login' ? handleLogin : handleRegister}>
                                     <input
-                                        class="cai-auth-input"
-                                        type="email"
-                                        placeholder={t.auth.email}
-                                        bind:value={authEmail}
-                                        disabled={authLoading}
-                                        required
-                                        autocomplete="email"
+                                            class="cai-auth-input"
+                                            type="email"
+                                            placeholder={t.auth.email}
+                                            bind:value={authEmail}
+                                            disabled={authLoading}
+                                            required
+                                            autocomplete="email"
                                     />
                                     <input
-                                        class="cai-auth-input"
-                                        type="password"
-                                        placeholder={t.auth.password}
-                                        bind:value={authPassword}
-                                        disabled={authLoading}
-                                        required
-                                        autocomplete={authMode === 'login' ? 'current-password' : 'new-password'}
-                                        minlength={authMode === 'register' ? 6 : undefined}
+                                            class="cai-auth-input"
+                                            type="password"
+                                            placeholder={t.auth.password}
+                                            bind:value={authPassword}
+                                            disabled={authLoading}
+                                            required
+                                            autocomplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                                            minlength={authMode === 'register' ? 6 : undefined}
                                     />
                                     {#if authError}
                                         <span class="cai-auth-error">{authError}</span>

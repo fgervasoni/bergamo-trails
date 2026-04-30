@@ -29,6 +29,41 @@ export async function fetchRifugi() {
 }
 
 /**
+ * Carica le vette da Supabase come GeoJSON FeatureCollection.
+ * @returns {Promise<GeoJSON.FeatureCollection | null>}
+ */
+export async function fetchVette() {
+    const { data, error } = await supabase.rpc('get_vette_geojson');
+    if (error) {
+        console.error('Errore caricamento vette:', error);
+        return null;
+    }
+    return data;
+}
+
+/**
+ * Aggiorna una vetta esistente.
+ * @param {number|string} id
+ * @param {object} updates
+ */
+export async function updateVetta(id, updates) {
+    const { data, error } = await supabase
+        .from('vette')
+        .update(updates)
+        .eq('id', id)
+        .select();
+    if (error) {
+        console.error('Errore aggiornamento vetta:', error);
+        return null;
+    }
+    if (!data || data.length === 0) {
+        console.error('Aggiornamento vetta: nessuna riga modificata (controlla le policy RLS)');
+        return null;
+    }
+    return data;
+}
+
+/**
  * Aggiorna un sentiero esistente.
  * @param {number|string} id - ID del sentiero
  * @param {object} updates - Campi da aggiornare (es. { numero_cai: '101', difficolta: 'E' })
@@ -86,7 +121,7 @@ export async function insertSentiero(sentiero) {
 
 /**
  * Inserisce un nuovo rifugio.
- * @param {object} rifugio - { nome, proprieta, quota, geom (WKT o GeoJSON) }
+ * @param {object} rifugio - { nome, proprieta, quota, geom (WKT) }
  */
 export async function insertRifugio(rifugio) {
     const { data, error } = await supabase
@@ -95,6 +130,22 @@ export async function insertRifugio(rifugio) {
         .select();
     if (error) {
         console.error('Errore inserimento rifugio:', error);
+        return null;
+    }
+    return data;
+}
+
+/**
+ * Inserisce una nuova vetta.
+ * @param {object} vetta - { nome, quota, descrizione, geom (WKT) }
+ */
+export async function insertVetta(vetta) {
+    const { data, error } = await supabase
+        .from('vette')
+        .insert(vetta)
+        .select();
+    if (error) {
+        console.error('Errore inserimento vetta:', error);
         return null;
     }
     return data;
@@ -117,6 +168,16 @@ export async function deleteSentiero(id) {
 export async function deleteRifugio(id) {
     const { error } = await supabase.from('rifugi').delete().eq('id', id);
     if (error) console.error('Errore eliminazione rifugio:', error);
+    return !error;
+}
+
+/**
+ * Elimina una vetta.
+ * @param {number|string} id
+ */
+export async function deleteVetta(id) {
+    const { error } = await supabase.from('vette').delete().eq('id', id);
+    if (error) console.error('Errore eliminazione vetta:', error);
     return !error;
 }
 

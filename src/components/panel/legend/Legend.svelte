@@ -29,6 +29,11 @@
             <div class="cai-legend-entry"><span class="cai-legend-circle" style="background:#2d6a4f"></span><span
                     class="cai-legend-label">{t.legend.shelter}</span></div>
         </div>
+        <div class="cai-legend-group">
+            <span class="cai-legend-group-title">{t.legend.peaks}</span>
+            <div class="cai-legend-entry"><span class="cai-legend-triangle" style="border-bottom-color:#e76f51"></span><span
+                    class="cai-legend-label">{t.legend.peak}</span></div>
+        </div>
     </div>
 </div>
 

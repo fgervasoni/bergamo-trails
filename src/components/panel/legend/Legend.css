@@ -51,6 +51,15 @@
     flex-shrink: 0;
 }
 
+.cai-legend-triangle {
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 10px solid;
+    flex-shrink: 0;
+}
+
 .cai-legend-label {
     font-size: 0.78rem;
     color: var(--text-label);

@@ -1,9 +1,9 @@
 <script>
     import './CustomPopup.css';
-    import {Pencil, X, Check, Loader} from 'lucide-svelte';
-    import {closeCustomPopup, popupState} from '../../stores/mapStore.svelte.js';
+    import {Pencil, Trash2, X, Check, Loader} from 'lucide-svelte';
+    import {closeCustomPopup, popupState, refreshLayer} from '../../stores/mapStore.svelte.js';
     import {getT} from '../../assets/i18n/i18n.svelte.js';
-    import {updateRifugio} from '../../services/trailsService.js';
+    import {updateRifugio, updateVetta, deleteRifugio, deleteVetta} from '../../services/trailsService.js';
     import {getModel, castValue, inputTypeFor} from '../../models/schema.js';
     import {authState} from '../../stores/authStore.svelte.js';
 
@@ -13,16 +13,21 @@
     let closing = $state(false);
     let editing = $state(false);
     let saving = $state(false);
-    let saveStatus = $state(''); // '' | 'success' | 'error'
+    let deleting = $state(false);
+    let confirmingDelete = $state(false);
+    let saveStatus = $state(''); // '' | 'success' | 'error' | 'deleted' | 'deleteError'
 
     let cachedTitle = $state('');
     let cachedFields = $state([]);
     let cachedEditable = $state(false);
     let cachedFeatureId = $state(null);
     let cachedLayerTitle = $state('');
+    let cachedCoordinates = $state(null);
 
     /** Copia editabile dei valori durante la modifica */
     let editValues = $state({});
+    let editLat = $state('');
+    let editLng = $state('');
 
     $effect(() => {
         if (popupState.open) {
@@ -31,8 +36,11 @@
             cachedEditable = popupState.editable;
             cachedFeatureId = popupState.featureId;
             cachedLayerTitle = popupState.layerTitle;
+            cachedCoordinates = popupState.coordinates;
             editing = false;
             saving = false;
+            deleting = false;
+            confirmingDelete = false;
             saveStatus = '';
             closing = false;
             visible = true;
@@ -42,6 +50,7 @@
                 visible = false;
                 closing = false;
                 editing = false;
+                confirmingDelete = false;
             }, 220);
         }
     });
@@ -52,22 +61,37 @@
             visible = false;
             closing = false;
             editing = false;
+            confirmingDelete = false;
             closeCustomPopup();
         }, 220);
     }
 
     function startEdit() {
         editValues = {};
+        const model = getModel(cachedLayerTitle);
         for (const field of cachedFields) {
-            editValues[field.key] = field.value ?? '';
+            let val = field.value ?? '';
+            // Per campi numerici, rimuovi suffissi di formattazione (es. "1650 m" → "1650")
+            const def = model?.fields[field.key];
+            if (def && (def.type === 'integer' || def.type === 'bigint') && typeof val === 'string') {
+                val = val.replace(/[^\d\-]/g, '');
+            }
+            editValues[field.key] = val;
+        }
+        // Inizializza coordinate editabili
+        if (cachedCoordinates) {
+            editLat = String(cachedCoordinates.latitude);
+            editLng = String(cachedCoordinates.longitude);
         }
         saveStatus = '';
+        confirmingDelete = false;
         editing = true;
     }
 
     function cancelEdit() {
         editing = false;
         saveStatus = '';
+        confirmingDelete = false;
     }
 
     async function saveEdit() {
@@ -75,31 +99,45 @@
         saving = true;
         saveStatus = '';
 
-        // Costruisci oggetto update usando i model per il cast dei tipi
         const model = getModel(cachedLayerTitle);
         const updates = {};
         for (const field of cachedFields) {
             const def = model?.fields[field.key];
-            // Invia solo campi che esistono nel model ed editabili
             if (!def || !def.editable) continue;
             let val = editValues[field.key];
             if (typeof val === 'string') val = val.trim();
-            // Rimuovi eventuali suffissi di formattazione (es. "1650 m" → "1650")
             if ((def.type === 'integer' || def.type === 'bigint') && typeof val === 'string') {
                 val = val.replace(/[^\d\-]/g, '');
             }
             updates[field.key] = castValue(val, def);
         }
 
+        // Aggiorna coordinate se modificate
+        if (cachedCoordinates && editLat && editLng) {
+            const lat = parseFloat(editLat);
+            const lng = parseFloat(editLng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                updates.geom = `SRID=4326;POINT(${lng} ${lat})`;
+            }
+        }
+
         try {
-            const result = await updateRifugio(cachedFeatureId, updates);
+            const updateFn = cachedLayerTitle === 'Vette' ? updateVetta : updateRifugio;
+            const result = await updateFn(cachedFeatureId, updates);
             if (result) {
-                // Aggiorna i campi cached con i nuovi valori
                 cachedFields = cachedFields.map(f => ({
                     ...f,
                     value: formatDisplayValue(f.key, updates[f.key])
                 }));
+                if (editLat && editLng) {
+                    cachedCoordinates = {
+                        latitude: parseFloat(editLat),
+                        longitude: parseFloat(editLng)
+                    };
+                }
                 saveStatus = 'success';
+                // Refresh layer sulla mappa
+                await refreshLayer(cachedLayerTitle);
                 setTimeout(() => {
                     editing = false;
                     saveStatus = '';
@@ -111,6 +149,34 @@
             saveStatus = 'error';
         } finally {
             saving = false;
+        }
+    }
+
+    async function handleDelete() {
+        if (!cachedFeatureId || deleting) return;
+        if (!confirmingDelete) {
+            confirmingDelete = true;
+            return;
+        }
+        deleting = true;
+        saveStatus = '';
+
+        try {
+            const deleteFn = cachedLayerTitle === 'Vette' ? deleteVetta : deleteRifugio;
+            const success = await deleteFn(cachedFeatureId);
+            if (success) {
+                saveStatus = 'deleted';
+                await refreshLayer(cachedLayerTitle);
+                setTimeout(() => dismiss(), 1200);
+            } else {
+                saveStatus = 'deleteError';
+                confirmingDelete = false;
+            }
+        } catch {
+            saveStatus = 'deleteError';
+            confirmingDelete = false;
+        } finally {
+            deleting = false;
         }
     }
 
@@ -130,6 +196,9 @@
                     <button class="cai-popup-edit" onclick={startEdit} aria-label={t.popup.edit} title={t.popup.edit}>
                         <Pencil size={13} strokeWidth={2}/>
                     </button>
+                    <button class="cai-popup-delete-btn" onclick={handleDelete} aria-label={t.popup.delete} title={t.popup.delete}>
+                        <Trash2 size={13} strokeWidth={2}/>
+                    </button>
                 {/if}
                 <button class="cai-popup-close" onclick={dismiss} aria-label={t.popup.close}>
                     <X size={14} strokeWidth={2}/>
@@ -137,7 +206,30 @@
             </div>
         </div>
         <div class="cai-popup-body">
-            {#if editing}
+            {#if confirmingDelete && !editing}
+                <div class="cai-popup-confirm-delete">
+                    <span class="cai-popup-confirm-text">{t.popup.deleteConfirm}</span>
+                    <div class="cai-popup-edit-actions">
+                        {#if saveStatus === 'deleted'}
+                            <span class="cai-popup-save-status success">{t.popup.deleteSuccess}</span>
+                        {:else if saveStatus === 'deleteError'}
+                            <span class="cai-popup-save-status error">{t.popup.deleteError}</span>
+                        {/if}
+                        <button class="cai-popup-btn cancel" onclick={() => confirmingDelete = false} disabled={deleting}>
+                            {t.popup.cancel}
+                        </button>
+                        <button class="cai-popup-btn delete" onclick={handleDelete} disabled={deleting}>
+                            {#if deleting}
+                                <Loader size={14} strokeWidth={2} class="cai-spinning"/>
+                                {t.popup.deleting}
+                            {:else}
+                                <Trash2 size={14} strokeWidth={2}/>
+                                {t.popup.delete}
+                            {/if}
+                        </button>
+                    </div>
+                </div>
+            {:else if editing}
                 <!-- Modalità editing -->
                 {#each cachedFields as field}
                     {@const model = getModel(cachedLayerTitle)}
@@ -154,6 +246,24 @@
                         />
                     </div>
                 {/each}
+                <!-- Coordinate editabili -->
+                {#if cachedCoordinates}
+                    <div class="cai-popup-coords-section">
+                        <span class="cai-popup-field-label">{t.popup.coordinates}</span>
+                        <div class="cai-popup-coords-row">
+                            <div class="cai-popup-coord-field">
+                                <label class="cai-popup-coord-label" for="edit-lat">{t.popup.latitude}</label>
+                                <input id="edit-lat" class="cai-popup-input" type="number" step="any"
+                                       bind:value={editLat} disabled={saving} placeholder="45.xxx"/>
+                            </div>
+                            <div class="cai-popup-coord-field">
+                                <label class="cai-popup-coord-label" for="edit-lng">{t.popup.longitude}</label>
+                                <input id="edit-lng" class="cai-popup-input" type="number" step="any"
+                                       bind:value={editLng} disabled={saving} placeholder="9.xxx"/>
+                            </div>
+                        </div>
+                    </div>
+                {/if}
                 <div class="cai-popup-edit-actions">
                     {#if saveStatus === 'success'}
                         <span class="cai-popup-save-status success">{t.popup.saveSuccess}</span>
@@ -180,6 +290,14 @@
                         <span class="cai-popup-field-value">{field.value ?? '—'}</span>
                     </div>
                 {/each}
+                {#if cachedCoordinates}
+                    <div class="cai-popup-field">
+                        <span class="cai-popup-field-label">{t.popup.coordinates}</span>
+                        <span class="cai-popup-field-value cai-popup-coords-value">
+                            {cachedCoordinates.latitude.toFixed(5)}, {cachedCoordinates.longitude.toFixed(5)}
+                        </span>
+                    </div>
+                {/if}
             {/if}
         </div>
     </div>

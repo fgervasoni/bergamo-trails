@@ -15,10 +15,11 @@
     "settings": "Settings"
   },
   "search": {
-    "placeholder": "Search trail, shelter or address...",
+    "placeholder": "Search trail, shelter, peak or address...",
     "clear": "Clear search",
     "trail": "Trail",
     "shelter": "Shelter",
+    "peak": "Peak",
     "address": "Address"
   },
   "locate": {
@@ -42,19 +43,30 @@
     "e": "E: Hiking",
     "ee": "EE: Expert Hikers",
     "eea": "EEA: Equipped",
-    "shelter": "Shelter"
+    "shelter": "Shelter",
+    "peaks": "Peaks",
+    "peak": "Peak"
   },
   "popup": {
     "close": "Close",
     "details": "Details",
     "trail": "Trail",
     "shelter": "Shelter",
+    "peak": "Peak",
     "edit": "Edit",
     "save": "Save",
     "cancel": "Cancel",
     "saving": "Saving...",
     "saveSuccess": "Saved!",
     "saveError": "Error saving",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "deleteConfirm": "Are you sure you want to delete?",
+    "deleteSuccess": "Deleted!",
+    "deleteError": "Error deleting",
+    "coordinates": "Coordinates",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
     "fieldLabels": {
       "numero_cai": "CAI Number",
       "difficolta": "Difficulty",
@@ -89,6 +101,15 @@
   },
   "footer": {
     "dataSource": "Data:"
+  },
+  "addFeature": {
+    "title": "Add",
+    "rifugio": "New Shelter",
+    "vetta": "New Peak",
+    "position": "Position",
+    "pickPosition": "Pick on map",
+    "changePosition": "Change position",
+    "add": "Add"
   }
 }
 

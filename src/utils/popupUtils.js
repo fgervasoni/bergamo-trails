@@ -60,6 +60,8 @@ export function buildPopupData(attrs, layerTitle, t) {
         title = `${t.popup.trail} ${attrs[titleField] || ''}`.trim();
     } else if (layerTitle === 'Rifugi') {
         title = attrs[titleField] || t.popup.shelter || layerTitle;
+    } else if (layerTitle === 'Vette') {
+        title = attrs[titleField] || t.popup.peak || layerTitle;
     } else {
         title = t.popup.details;
     }

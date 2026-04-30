@@ -51,6 +51,17 @@ const sentieriFields = {
 /** Valori ammessi per il campo difficolta (CHECK constraint) */
 export const DIFFICOLTA_VALUES = ['T', 'E', 'EE', 'EEA'];
 
+/** @type {Record<string, FieldDef>} */
+const vetteFields = {
+    id:          { type: FieldType.BIGINT,      nullable: false, editable: false },
+    nome:        { type: FieldType.TEXT,         nullable: false, editable: true  },
+    quota:       { type: FieldType.INTEGER,      nullable: true,  editable: true  },
+    descrizione: { type: FieldType.TEXT,         nullable: true,  editable: true  },
+    geom:        { type: FieldType.GEOMETRY,     nullable: false, editable: false },
+    created_at:  { type: FieldType.TIMESTAMPTZ,  nullable: true,  editable: false },
+    updated_at:  { type: FieldType.TIMESTAMPTZ,  nullable: true,  editable: false }
+};
+
 /**
  * @typedef {Object} TableModel
  * @property {Record<string, FieldDef>} fields
@@ -74,6 +85,13 @@ export const models = {
         fields: sentieriFields,
         titleField: 'numero_cai',
         editable: false,
+        hidden: new Set(['id', 'geom', 'created_at', 'updated_at'])
+    },
+    Vette: {
+        tableName: 'vette',
+        fields: vetteFields,
+        titleField: 'nome',
+        editable: true,
         hidden: new Set(['id', 'geom', 'created_at', 'updated_at'])
     }
 };

@@ -229,6 +229,84 @@
     color: #c0392b;
 }
 
+/* ── Delete button ───────────────────────────── */
+
+.cai-popup-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(192, 57, 43, 0.25);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.cai-popup-delete-btn:hover {
+    background: rgba(192, 57, 43, 0.5);
+}
+
+.cai-popup-btn.delete {
+    background: #c0392b;
+    color: white;
+}
+
+.cai-popup-btn.delete:hover:not(:disabled) {
+    background: #96281b;
+}
+
+.cai-popup-confirm-delete {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.cai-popup-confirm-text {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* ── Coordinates ─────────────────────────────── */
+
+.cai-popup-coords-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border-section);
+}
+
+.cai-popup-coords-row {
+    display: flex;
+    gap: 8px;
+}
+
+.cai-popup-coord-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cai-popup-coord-label {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.cai-popup-coords-value {
+    font-family: monospace;
+    font-size: 0.78rem;
+}
+
 @media (max-width: 540px) {
     .cai-popup-card {
         bottom: auto;

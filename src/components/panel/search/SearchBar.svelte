@@ -1,6 +1,6 @@
 <script>
     import './SearchBar.css';
-    import {Footprints, Home, MapPin, Search, X} from 'lucide-svelte';
+    import {Footprints, Home, MapPin, Mountain, Search, X} from 'lucide-svelte';
     import {
         clearHighlight,
         closeCustomPopup,
@@ -78,6 +78,27 @@
                 }
             }
 
+            if (mapState.vetteLayer) {
+                const vetteQuery = mapState.vetteLayer.createQuery();
+                vetteQuery.where = `UPPER(nome) LIKE '%${text.toUpperCase().replace(/'/g, "''")}%'`;
+                vetteQuery.outFields = ['*'];
+                vetteQuery.returnGeometry = true;
+                vetteQuery.num = 5;
+                try {
+                    const vRes = await mapState.vetteLayer.queryFeatures(vetteQuery);
+                    for (const f of vRes.features) {
+                        allResults.push({
+                            text: `${f.attributes.nome}${f.attributes.quota ? ` (${f.attributes.quota}m)` : ''}`,
+                            type: 'vetta',
+                            geometry: f.geometry,
+                            feature: f,
+                            layer: mapState.vetteLayer
+                        });
+                    }
+                } catch { /* ignore */
+                }
+            }
+
             try {
                 const geoResponse = await addressToLocations(GEOCODE_URL, {
                     address: {SingleLine: text},
@@ -149,7 +170,11 @@
                 const attrs = result.feature.attributes;
                 const lTitle = result.layer?.title || '';
                 const {title, fields, editable, featureId, layerTitle: lt} = buildPopupData(attrs, lTitle, t);
-                openCustomPopup(title, fields, {editable, featureId, layerTitle: lt});
+                const geom = result.feature.geometry;
+                const coordinates = geom?.type === 'point'
+                    ? {longitude: geom.longitude, latitude: geom.latitude}
+                    : null;
+                openCustomPopup(title, fields, {editable, featureId, layerTitle: lt, coordinates});
             }
         } else if (result.location) {
             if (window.innerWidth <= 540) uiState.panelOpen = false;
@@ -167,12 +192,14 @@
     function getIcon(type) {
         if (type === 'sentiero') return Footprints;
         if (type === 'rifugio') return Home;
+        if (type === 'vetta') return Mountain;
         return MapPin;
     }
 
     function getTypeLabel(type) {
         if (type === 'sentiero') return t.search.trail;
         if (type === 'rifugio') return t.search.shelter;
+        if (type === 'vetta') return t.search.peak;
         return t.search.address;
     }
 </script>
