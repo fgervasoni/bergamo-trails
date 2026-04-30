@@ -1,19 +1,21 @@
 <script>
     import './AddFeature.css';
-    import {Home, Loader, MapPinPlus, Mountain, Plus, X} from 'lucide-svelte';
+    import {Crosshair, Home, Loader, MapPinPlus, Mountain, Navigation, Plus, Route, SquareCheck, Undo2, X} from 'lucide-svelte';
     import {mapState} from '../../../stores/mapStore.svelte.js';
     import {refreshLayer} from '../../../stores/mapStore.svelte.js';
     import {authState} from '../../../stores/authStore.svelte.js';
     import {getT} from '../../../assets/i18n/i18n.svelte.js';
-    import {insertRifugio, insertVetta} from '../../../services/trailsService.js';
-    import {getModel, castValue} from '../../../models/schema.js';
+    import {insertRifugio, insertVetta, insertSentiero} from '../../../services/trailsService.js';
+    import {getModel, castValue, DIFFICOLTA_VALUES} from '../../../models/schema.js';
     import Graphic from '@arcgis/core/Graphic';
     import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
+    import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
     import Point from '@arcgis/core/geometry/Point';
+    import Polyline from '@arcgis/core/geometry/Polyline';
 
     let t = $derived(getT());
 
-    let featureType = $state(''); // '' | 'rifugio' | 'vetta'
+    let featureType = $state(''); // '' | 'rifugio' | 'vetta' | 'sentiero'
     let formValues = $state({});
     let saving = $state(false);
     let saveStatus = $state(''); // '' | 'success' | 'error'
@@ -21,23 +23,37 @@
     let selectedPoint = $state(null);
     let clickHandler = null;
     let previewGraphic = null;
+    let gpsLoading = $state(false);
 
-    let currentLayerTitle = $derived(featureType === 'rifugio' ? 'Rifugi' : featureType === 'vetta' ? 'Vette' : '');
+    // Trail drawing state
+    let trailPoints = $state([]);
+    let drawingTrail = $state(false);
+    let trailPreviewGraphics = $state([]);
+
+    let currentLayerTitle = $derived(
+        featureType === 'rifugio' ? 'Rifugi' :
+        featureType === 'vetta' ? 'Vette' :
+        featureType === 'sentiero' ? 'Sentieri' : ''
+    );
     let currentModel = $derived(currentLayerTitle ? getModel(currentLayerTitle) : null);
     let fieldLabels = $derived(t.popup.fieldLabels || {});
 
     const featureOptions = [
         {type: 'rifugio', icon: Home, layerTitle: 'Rifugi'},
-        {type: 'vetta', icon: Mountain, layerTitle: 'Vette'}
+        {type: 'vetta', icon: Mountain, layerTitle: 'Vette'},
+        {type: 'sentiero', icon: Route, layerTitle: 'Sentieri'}
     ];
+
+    let isPointFeature = $derived(featureType === 'rifugio' || featureType === 'vetta');
+    let isTrailFeature = $derived(featureType === 'sentiero');
 
     function startAdd(type) {
         featureType = type;
         formValues = {};
         saveStatus = '';
         selectedPoint = null;
-        // Pre-fill form keys from model
-        const layerTitle = type === 'rifugio' ? 'Rifugi' : 'Vette';
+        trailPoints = [];
+        const layerTitle = type === 'rifugio' ? 'Rifugi' : type === 'vetta' ? 'Vette' : 'Sentieri';
         const model = getModel(layerTitle);
         if (model) {
             for (const [key, def] of Object.entries(model.fields)) {
@@ -53,9 +69,27 @@
         formValues = {};
         saveStatus = '';
         selectedPoint = null;
+        trailPoints = [];
         stopPicking();
+        stopDrawing();
+        clearAllPreviews();
     }
 
+    function clearAllPreviews() {
+        const layer = mapState.locationLayer;
+        if (layer && previewGraphic) {
+            layer.remove(previewGraphic);
+            previewGraphic = null;
+        }
+        if (layer) {
+            for (const g of trailPreviewGraphics) {
+                layer.remove(g);
+            }
+        }
+        trailPreviewGraphics = [];
+    }
+
+    // --- Point picking (for rifugio/vetta) ---
     function startPicking() {
         const view = mapState.view;
         if (!view) return;
@@ -66,23 +100,24 @@
             event.stopPropagation();
             const pt = event.mapPoint;
             selectedPoint = {longitude: pt.longitude, latitude: pt.latitude};
-
-            // Show preview marker
-            const layer = mapState.locationLayer;
-            if (layer && previewGraphic) layer.remove(previewGraphic);
-            previewGraphic = new Graphic({
-                geometry: new Point({longitude: pt.longitude, latitude: pt.latitude}),
-                symbol: new SimpleMarkerSymbol({
-                    style: 'diamond',
-                    color: [255, 215, 0, 0.9],
-                    size: 14,
-                    outline: {color: '#333', width: 2}
-                })
-            });
-            if (layer) layer.add(previewGraphic);
-
+            showPointPreview(pt.longitude, pt.latitude);
             stopPicking();
         });
+    }
+
+    function showPointPreview(longitude, latitude) {
+        const layer = mapState.locationLayer;
+        if (layer && previewGraphic) layer.remove(previewGraphic);
+        previewGraphic = new Graphic({
+            geometry: new Point({longitude, latitude}),
+            symbol: new SimpleMarkerSymbol({
+                style: 'diamond',
+                color: [255, 215, 0, 0.9],
+                size: 14,
+                outline: {color: '#333', width: 2}
+            })
+        });
+        if (layer) layer.add(previewGraphic);
     }
 
     function stopPicking() {
@@ -95,16 +130,123 @@
         if (view) view.container.style.cursor = '';
     }
 
+    // --- Use current GPS position ---
+    function useCurrentPosition() {
+        if (!navigator.geolocation) {
+            saveStatus = 'error';
+            return;
+        }
+        gpsLoading = true;
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const {longitude, latitude} = position.coords;
+                selectedPoint = {longitude, latitude};
+                showPointPreview(longitude, latitude);
+                gpsLoading = false;
+                // Center map on position
+                const view = mapState.view;
+                if (view) {
+                    view.goTo({center: [longitude, latitude], zoom: 15}, {duration: 600});
+                }
+            },
+            () => {
+                gpsLoading = false;
+                alert(t.addFeature.gpsNotAvailable);
+            },
+            {enableHighAccuracy: true, timeout: 10000}
+        );
+    }
+
+    // --- Trail drawing (for sentiero) ---
+    function startDrawing() {
+        const view = mapState.view;
+        if (!view) return;
+        drawingTrail = true;
+        view.container.style.cursor = 'crosshair';
+
+        clickHandler = view.on('click', (event) => {
+            event.stopPropagation();
+            const pt = event.mapPoint;
+            trailPoints = [...trailPoints, {longitude: pt.longitude, latitude: pt.latitude}];
+            updateTrailPreview();
+        });
+    }
+
+    function stopDrawing() {
+        drawingTrail = false;
+        if (clickHandler) {
+            clickHandler.remove();
+            clickHandler = null;
+        }
+        const view = mapState.view;
+        if (view) view.container.style.cursor = '';
+    }
+
+    function undoLastTrailPoint() {
+        if (trailPoints.length > 0) {
+            trailPoints = trailPoints.slice(0, -1);
+            updateTrailPreview();
+        }
+    }
+
+    function updateTrailPreview() {
+        const layer = mapState.locationLayer;
+        if (!layer) return;
+
+        // Remove old previews
+        for (const g of trailPreviewGraphics) {
+            layer.remove(g);
+        }
+        trailPreviewGraphics = [];
+
+        // Draw points
+        for (const pt of trailPoints) {
+            const g = new Graphic({
+                geometry: new Point({longitude: pt.longitude, latitude: pt.latitude}),
+                symbol: new SimpleMarkerSymbol({
+                    style: 'circle',
+                    color: [255, 140, 0, 0.9],
+                    size: 8,
+                    outline: {color: '#333', width: 1.5}
+                })
+            });
+            layer.add(g);
+            trailPreviewGraphics = [...trailPreviewGraphics, g];
+        }
+
+        // Draw line if 2+ points
+        if (trailPoints.length >= 2) {
+            const paths = [trailPoints.map(p => [p.longitude, p.latitude])];
+            const lineGraphic = new Graphic({
+                geometry: new Polyline({paths}),
+                symbol: new SimpleLineSymbol({
+                    color: [230, 111, 81, 0.9],
+                    width: 3,
+                    style: 'dash'
+                })
+            });
+            layer.add(lineGraphic);
+            trailPreviewGraphics = [...trailPreviewGraphics, lineGraphic];
+        }
+    }
+
+    function finishDrawing() {
+        stopDrawing();
+    }
+
+    // --- Save ---
     async function handleSave() {
-        if (!selectedPoint || saving) return;
+        if (saving) return;
+
+        if (isPointFeature && !selectedPoint) return;
+        if (isTrailFeature && trailPoints.length < 2) return;
+
         saving = true;
         saveStatus = '';
 
-        const layerTitle = featureType === 'rifugio' ? 'Rifugi' : 'Vette';
-        const model = getModel(layerTitle);
+        const model = getModel(currentLayerTitle);
         const record = {};
 
-        // Cast dei valori dal form
         if (model) {
             for (const [key, def] of Object.entries(model.fields)) {
                 if (def.editable && !model.hidden.has(key)) {
@@ -113,21 +255,24 @@
             }
         }
 
-        // Aggiunta geometria in formato WKT
-        record.geom = `SRID=4326;POINT(${selectedPoint.longitude} ${selectedPoint.latitude})`;
+        // Geometry
+        if (isPointFeature) {
+            record.geom = `SRID=4326;POINT(${selectedPoint.longitude} ${selectedPoint.latitude})`;
+        } else if (isTrailFeature) {
+            const coordsStr = trailPoints.map(p => `${p.longitude} ${p.latitude}`).join(',');
+            record.geom = `SRID=4326;LINESTRING(${coordsStr})`;
+        }
 
         try {
-            const insertFn = featureType === 'rifugio' ? insertRifugio : insertVetta;
+            let insertFn;
+            if (featureType === 'rifugio') insertFn = insertRifugio;
+            else if (featureType === 'vetta') insertFn = insertVetta;
+            else insertFn = insertSentiero;
+
             const result = await insertFn(record);
             if (result) {
                 saveStatus = 'success';
-                // Clean up preview
-                const layer = mapState.locationLayer;
-                if (layer && previewGraphic) {
-                    layer.remove(previewGraphic);
-                    previewGraphic = null;
-                }
-                // Refresh del layer sulla mappa
+                clearAllPreviews();
                 await refreshLayer(currentLayerTitle);
                 setTimeout(() => {
                     cancelAdd();
@@ -173,36 +318,117 @@
                             <label class="cai-add-field-label" for="add-{key}">
                                 {fieldLabels[key] || key}
                             </label>
-                            <input
-                                id="add-{key}"
-                                class="cai-add-input"
-                                type={def.type === 'integer' || def.type === 'bigint' ? 'number' : 'text'}
-                                bind:value={formValues[key]}
-                                disabled={saving}
-                                placeholder="—"
-                            />
+                            {#if key === 'difficolta' && isTrailFeature}
+                                <select
+                                    id="add-{key}"
+                                    class="cai-add-input"
+                                    bind:value={formValues[key]}
+                                    disabled={saving}
+                                >
+                                    <option value="">—</option>
+                                    {#each DIFFICOLTA_VALUES as val}
+                                        <option value={val}>{val}</option>
+                                    {/each}
+                                </select>
+                            {:else}
+                                <input
+                                    id="add-{key}"
+                                    class="cai-add-input"
+                                    type={def.type === 'integer' || def.type === 'bigint' ? 'number' : 'text'}
+                                    bind:value={formValues[key]}
+                                    disabled={saving}
+                                    placeholder="—"
+                                />
+                            {/if}
                         </div>
                     {/each}
                 {/if}
 
-                <div class="cai-add-location">
-                    <label class="cai-add-field-label">{t.addFeature.position}</label>
-                    {#if selectedPoint}
-                        <span class="cai-add-coords">
-                            {selectedPoint.latitude.toFixed(5)}, {selectedPoint.longitude.toFixed(5)}
-                        </span>
-                    {/if}
-                    <button
-                        class="cai-add-pick-btn"
-                        class:active={pickingLocation}
-                        onclick={startPicking}
-                        disabled={saving}
-                        type="button"
-                    >
-                        <MapPinPlus size={14} strokeWidth={2}/>
-                        {selectedPoint ? t.addFeature.changePosition : t.addFeature.pickPosition}
-                    </button>
-                </div>
+                <!-- Point location (rifugio/vetta) -->
+                {#if isPointFeature}
+                    <div class="cai-add-location">
+                        <label class="cai-add-field-label">{t.addFeature.position}</label>
+                        {#if selectedPoint}
+                            <span class="cai-add-coords">
+                                {selectedPoint.latitude.toFixed(5)}, {selectedPoint.longitude.toFixed(5)}
+                            </span>
+                        {/if}
+                        <div class="cai-add-location-buttons">
+                            <button
+                                class="cai-add-pick-btn"
+                                class:active={pickingLocation}
+                                onclick={startPicking}
+                                disabled={saving}
+                                type="button"
+                            >
+                                <MapPinPlus size={14} strokeWidth={2}/>
+                                {selectedPoint ? t.addFeature.changePosition : t.addFeature.pickPosition}
+                            </button>
+                            <button
+                                class="cai-add-pick-btn"
+                                onclick={useCurrentPosition}
+                                disabled={saving || gpsLoading}
+                                type="button"
+                            >
+                                {#if gpsLoading}
+                                    <Loader size={14} strokeWidth={2} class="cai-spinning"/>
+                                {:else}
+                                    <Navigation size={14} strokeWidth={2}/>
+                                {/if}
+                                {t.addFeature.useCurrentPosition}
+                            </button>
+                        </div>
+                    </div>
+                {/if}
+
+                <!-- Trail drawing (sentiero) -->
+                {#if isTrailFeature}
+                    <div class="cai-add-location">
+                        <label class="cai-add-field-label">{t.addFeature.trailDraw}</label>
+                        {#if trailPoints.length > 0}
+                            <span class="cai-add-coords">
+                                {t.addFeature.trailPoints.replace('{count}', trailPoints.length)}
+                            </span>
+                        {/if}
+                        <div class="cai-add-location-buttons">
+                            {#if !drawingTrail}
+                                <button
+                                    class="cai-add-pick-btn"
+                                    onclick={startDrawing}
+                                    disabled={saving}
+                                    type="button"
+                                >
+                                    <Crosshair size={14} strokeWidth={2}/>
+                                    {t.addFeature.pickPosition}
+                                </button>
+                            {:else}
+                                <button
+                                    class="cai-add-pick-btn active"
+                                    onclick={finishDrawing}
+                                    disabled={saving}
+                                    type="button"
+                                >
+                                    <SquareCheck size={14} strokeWidth={2}/>
+                                    {t.addFeature.finishTrail}
+                                </button>
+                            {/if}
+                            {#if trailPoints.length > 0}
+                                <button
+                                    class="cai-add-pick-btn"
+                                    onclick={undoLastTrailPoint}
+                                    disabled={saving}
+                                    type="button"
+                                >
+                                    <Undo2 size={14} strokeWidth={2}/>
+                                    {t.addFeature.undoLastPoint}
+                                </button>
+                            {/if}
+                        </div>
+                        {#if trailPoints.length > 0 && trailPoints.length < 2}
+                            <span class="cai-add-status error">{t.addFeature.trailMinPoints}</span>
+                        {/if}
+                    </div>
+                {/if}
 
                 {#if saveStatus === 'success'}
                     <span class="cai-add-status success">{t.popup.saveSuccess}</span>
@@ -213,7 +439,7 @@
                 <button
                     class="cai-add-save-btn"
                     onclick={handleSave}
-                    disabled={saving || !selectedPoint}
+                    disabled={saving || (isPointFeature && !selectedPoint) || (isTrailFeature && trailPoints.length < 2)}
                 >
                     {#if saving}
                         <Loader size={14} strokeWidth={2} class="cai-spinning"/>
@@ -227,9 +453,3 @@
         {/if}
     </div>
 {/if}
-
-
-
-
-
-

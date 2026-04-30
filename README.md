@@ -14,16 +14,19 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 
 - **Visualizzazione sentieri** con classificazione per difficoltà (T, E, EE, EEA)
 - **Visualizzazione rifugi** con dettagli (nome, quota, proprietà)
-- **Ricerca** per numero sentiero CAI, nome rifugio o indirizzo italiano
-- **Geolocalizzazione** dell'utente sulla mappa
-- **Popup interattivo** con informazioni dettagliate al click o alla ricerca
-- **Highlight** delle feature selezionate
-- **Cambio mappa base** (Topografica, Satellite, Stradale)
+- **Visualizzazione vette** con quota e descrizione
+- **Aggiunta nuovi punti** (rifugi, vette) da mappa o posizione GPS attuale
+- **Tracciamento nuovi sentieri** con disegno polyline interattivo
+- **Ricerca** per numero sentiero CAI, nome rifugio/vetta o indirizzo
+- **Geolocalizzazione** con tracciamento continuo e indicatore di direzione
+- **Popup interattivo** con modifica e eliminazione feature (utenti autenticati)
+- **Autenticazione** con login/registrazione integrata
+- **Cambio mappa base** (Topografica, Rilievo, Satellite, OpenStreetMap)
 - **Legenda** sempre visibile
 - **Tema chiaro / scuro / sistema** con persistenza
 - **Multilingua** (Italiano 🇮🇹 / English 🇬🇧)
 - **Responsive** — pannello laterale su desktop, bottom sheet su mobile
-- **Installabile** come PWA con supporto offline
+- **Installabile** come PWA con splash screen immediato e supporto offline
 
 ---
 
@@ -34,6 +37,7 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 | [Svelte](https://svelte.dev)                                        | 5        | Framework UI (runes mode) |
 | [Vite](https://vitejs.dev)                                          | 6        | Build tool e dev server   |
 | [ArcGIS Maps SDK for JS](https://developers.arcgis.com/javascript/) | 5        | Mappa, layer, geocoding   |
+| [Supabase](https://supabase.com)                                    | 2.x      | Database PostGIS e auth   |
 | [Lucide Svelte](https://lucide.dev)                                 | 1.x      | Icone SVG                 |
 
 ---
@@ -42,7 +46,7 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 
 ```
 src/
-├── App.svelte                         # Layout principale (panel, loading, settings)
+├── App.svelte                         # Layout principale (panel, settings)
 ├── App.css                            # Stili panel, footer, impostazioni
 ├── global.css                         # CSS custom properties (tema chiaro/scuro), reset
 ├── main.js                            # Entry point
@@ -59,33 +63,49 @@ src/
 │   │   └── MapContainer.css
 │   │
 │   ├── panel/
+│   │   ├── add/
+│   │   │   ├── AddFeature.svelte      # Aggiunta rifugi, vette e sentieri
+│   │   │   └── AddFeature.css
 │   │   ├── search/
-│   │   │   ├── SearchBar.svelte       # Ricerca sentieri, rifugi, indirizzi
+│   │   │   ├── SearchBar.svelte       # Ricerca sentieri, rifugi, vette, indirizzi
 │   │   │   └── SearchBar.css
 │   │   ├── locate/
-│   │   │   ├── LocateButton.svelte    # Pulsante geolocalizzazione
+│   │   │   ├── LocateButton.svelte    # Pulsante geolocalizzazione e tracciamento GPS
 │   │   │   └── LocateButton.css
 │   │   ├── basemap/
 │   │   │   ├── BasemapSwitcher.svelte # Selezione mappa base
 │   │   │   └── BasemapSwitcher.css
 │   │   └── legend/
-│   │       ├── Legend.svelte          # Legenda sentieri e rifugi
+│   │       ├── Legend.svelte          # Legenda sentieri, rifugi e vette
 │   │       └── Legend.css
 │   │
 │   └── popup/
 │       ├── CustomPopup.svelte         # Card popup glassmorphism
 │       └── CustomPopup.css
 │
-└── stores/
-    ├── mapStore.svelte.js             # Stato mappa, popup, highlight
-    └── themeStore.svelte.js           # Stato tema (light/dark/system)
+├── lib/
+│   └── supabaseClient.js              # Client Supabase
+│
+├── models/
+│   └── schema.js                      # Schema tabelle (rifugi, sentieri, vette)
+│
+├── services/
+│   └── trailsService.js               # CRUD Supabase (fetch, insert, update, delete)
+│
+├── stores/
+│   ├── authStore.svelte.js            # Autenticazione utente
+│   ├── mapStore.svelte.js             # Stato mappa, popup, highlight
+│   └── themeStore.svelte.js           # Stato tema (light/dark/system)
+│
+└── utils/
+    └── popupUtils.js                  # Utility per popup
 
 public/
 ├── manifest.json                      # PWA manifest
 ├── service-worker.js                  # Service worker per caching
 ├── offline.html                       # Pagina offline
 ├── favicon.png
-└── images/icons/                      # Icone PWA (32–512px + maskable)
+└── images/icons/                      # Icone PWA (16–512px + maskable)
 ```
 
 ---
@@ -125,7 +145,9 @@ I file di output vengono generati nella cartella `dist/`.
 
 ## Dati
 
-I dati geografici provengono dal servizio cartografico **Maggioli S.p.A.** per conto di **CAI Bergamo** e sono serviti tramite **Supabase (PostGIS)** in formato GeoJSON.
+I dati geografici di partenza provengono dal servizio cartografico **Maggioli S.p.A.** per conto di **CAI Bergamo** e sono serviti tramite **Supabase (PostGIS)** in formato GeoJSON.
+
+Il dataset originale dei sentieri e rifugi viene progressivamente arricchito dalla community con l'aggiunta di **vette**, nuovi punti di interesse e nuovi sentieri tracciati direttamente dall'app.
 
 Il geocoding degli indirizzi utilizza
 il [World Geocoding Service](https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer) di Esri.
@@ -147,4 +169,4 @@ Basta collegare il repository a Netlify e il deploy avverrà automaticamente.
 
 ## Licenza
 
-Questo progetto è a uso privato. I dati cartografici sono di proprietà di CAI Bergamo / Maggioli S.p.A.
+Questo progetto è a uso privato. I dati cartografici di partenza sono di proprietà di CAI Bergamo / Maggioli S.p.A. e vengono integrati con contributi originali degli utenti.

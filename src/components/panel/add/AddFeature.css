@@ -110,6 +110,18 @@
     gap: 4px;
 }
 
+.cai-add-location-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.cai-add-location-buttons .cai-add-pick-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 0.78rem;
+}
+
 .cai-add-coords {
     font-size: 0.75rem;
     color: var(--text-heading);
@@ -138,8 +150,8 @@
 }
 
 .cai-add-pick-btn.active {
-    border-color: #e76f51;
-    color: #e76f51;
+    border-color: var(--accent-text);
+    color: var(--accent-text);
     animation: cai-pulse 1.2s infinite;
 }
 

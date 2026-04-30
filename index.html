@@ -31,6 +31,62 @@
     })();
 </script>
 <div id="app"></div>
+<div id="splash-loading">
+    <div class="splash-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"/></svg>
+        <h2>Bergamo Trails</h2>
+        <p>Caricamento mappa sentieri...</p>
+        <svg class="splash-spinner" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    </div>
+</div>
+<style>
+    #splash-loading {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-body, #f0f2f5);
+        transition: opacity 0.3s;
+    }
+    [data-theme="dark"] #splash-loading {
+        background: #0f172a;
+        color: #e2e8f0;
+    }
+    .splash-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        color: #1a472a;
+    }
+    [data-theme="dark"] .splash-content {
+        color: #a7f3d0;
+    }
+    .splash-content h2 {
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+    .splash-content p {
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.85rem;
+        opacity: 0.7;
+    }
+    .splash-spinner {
+        animation: splash-spin 1s linear infinite;
+    }
+    @keyframes splash-spin {
+        to { transform: rotate(360deg); }
+    }
+    #splash-loading.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+</style>
 <script src="/src/main.js" type="module"></script>
 
 <script>

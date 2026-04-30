@@ -32,7 +32,7 @@
 .cai-locate-btn.active,
 .cai-locate-btn.active:focus,
 .cai-locate-btn.active:hover {
-    background: var(--accent-text);
+    background: var(--accent);
     color: white;
 }
 

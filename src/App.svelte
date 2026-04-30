@@ -7,7 +7,7 @@
     import Legend from './components/panel/legend/Legend.svelte';
     import AddFeature from './components/panel/add/AddFeature.svelte';
     import CustomPopup from './components/popup/CustomPopup.svelte';
-    import {Loader, LogIn, LogOut, Monitor, Moon, Mountain, Settings, Sun, X} from 'lucide-svelte';
+    import {Loader, LogIn, LogOut, Monitor, Moon, Mountain, MountainSnow, Settings, Sun, X} from 'lucide-svelte';
     import {availableLocales, getT, i18n, setLocale} from './assets/i18n/i18n.svelte.js';
     import {uiState} from './stores/mapStore.svelte.js';
     import {initTheme, setTheme, themeState} from './stores/themeStore.svelte.js';
@@ -32,6 +32,12 @@
 
     function onMapReady() {
         loading = false;
+        // Hide the HTML splash
+        const splash = document.getElementById('splash-loading');
+        if (splash) {
+            splash.classList.add('hidden');
+            setTimeout(() => splash.remove(), 400);
+        }
     }
 
     const themeOptions = [
@@ -86,20 +92,6 @@
     }
 </script>
 
-{#if loading}
-    <div class="loading-overlay">
-        <div class="loading-content">
-            <div class="loading-icon">
-                <Mountain size={48} strokeWidth={1.5}/>
-            </div>
-            <h2>{t.loading.title}</h2>
-            <p>{t.loading.message}</p>
-            <div class="loading-spinner">
-                <Loader size={28} strokeWidth={2}/>
-            </div>
-        </div>
-    </div>
-{/if}
 
 <div class="cai-app" class:visible={!loading}>
     <div class="cai-map-wrapper">
@@ -109,7 +101,7 @@
     <aside class="cai-panel" class:closed={!uiState.panelOpen}>
         <div class="cai-panel-header">
             <div class="cai-brand">
-                <Mountain size={22} strokeWidth={2}/>
+                <MountainSnow size={22} strokeWidth={2}/>
                 <div>
                     <h1>{t.panel.brand}</h1>
                     <span class="cai-brand-sub">{t.panel.subtitle}</span>
@@ -246,13 +238,23 @@
                                 </form>
                             {/if}
                         </div>
+                        <div class="cai-settings-row cai-credits-row">
+                            <span class="cai-settings-row-label">{t.settings.credits}</span>
+                            <a class="cai-settings-credits-text" href="https://www.caibergamo.it"
+                               rel="noopener noreferrer" target="_blank">CAI Bergamo</a>
+                        </div>
                     </div>
                 {/if}
             </div>
             <div class="cai-panel-credits">
-                <span>{t.footer.dataSource}</span>
-                <a href="https://www.caibergamo.it"
-                   rel="noopener noreferrer" target="_blank">CAI Bergamo</a>
+                <a aria-label="GitHub"
+                   href="https://github.com/fgervasoni/bergamo-trails" rel="noopener noreferrer" target="_blank"
+                   title="GitHub">
+                    <svg fill="currentColor" height="16" viewBox="0 0 24 24" width="16"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                </a>
             </div>
         </div>
     </aside>

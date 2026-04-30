@@ -85,7 +85,8 @@
     "light": "Chiaro",
     "dark": "Scuro",
     "system": "Sistema",
-    "account": "Account"
+    "account": "Account",
+    "credits": "Credits"
   },
   "auth": {
     "login": "Accedi",
@@ -103,16 +104,24 @@
     "switchToLogin": "Hai già un account?"
   },
   "footer": {
-    "dataSource": "Dati:"
+    "madeBy": "Sviluppato da"
   },
   "addFeature": {
     "title": "Aggiungi",
     "rifugio": "Nuovo Rifugio",
     "vetta": "Nuova Vetta",
+    "sentiero": "Nuovo Sentiero",
     "position": "Posizione",
     "pickPosition": "Seleziona sulla mappa",
     "changePosition": "Cambia posizione",
-    "add": "Aggiungi"
+    "useCurrentPosition": "Usa posizione attuale",
+    "gpsNotAvailable": "GPS non disponibile",
+    "add": "Aggiungi",
+    "trailDraw": "Clicca sulla mappa per tracciare il percorso",
+    "trailPoints": "{count} punti tracciati",
+    "finishTrail": "Termina tracciamento",
+    "undoLastPoint": "Annulla ultimo punto",
+    "trailMinPoints": "Servono almeno 2 punti"
   }
 }
 

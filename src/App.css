@@ -79,9 +79,9 @@
 /* ===== Panel ===== */
 .cai-panel {
     position: fixed;
-    top: 12px;
+    top: 16px;
     right: 12px;
-    bottom: 12px;
+    bottom: 32px;
     width: 320px;
     z-index: 50;
     background: var(--bg-panel);
@@ -363,6 +363,27 @@
 .cai-auth-row {
     border-top: 1px solid var(--border-settings);
     padding-top: 8px;
+}
+
+.cai-credits-row {
+    border-top: 1px solid var(--border-settings);
+    padding-top: 8px;
+}
+
+.cai-settings-credits-text {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.cai-settings-credits-text a {
+    color: var(--accent-text);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.cai-settings-credits-text a:hover {
+    text-decoration: underline;
 }
 
 .cai-auth-form {

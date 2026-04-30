@@ -84,7 +84,7 @@ export const models = {
         tableName: 'sentieri',
         fields: sentieriFields,
         titleField: 'numero_cai',
-        editable: false,
+        editable: true,
         hidden: new Set(['id', 'geom', 'created_at', 'updated_at'])
     },
     Vette: {

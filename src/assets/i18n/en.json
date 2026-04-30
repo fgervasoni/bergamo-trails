@@ -85,7 +85,8 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System",
-    "account": "Account"
+    "account": "Account",
+    "credits": "Credits"
   },
   "auth": {
     "login": "Log in",
@@ -103,16 +104,24 @@
     "switchToLogin": "Already have an account?"
   },
   "footer": {
-    "dataSource": "Data:"
+    "madeBy": "Made by"
   },
   "addFeature": {
     "title": "Add",
     "rifugio": "New Shelter",
     "vetta": "New Peak",
+    "sentiero": "New Trail",
     "position": "Position",
     "pickPosition": "Pick on map",
     "changePosition": "Change position",
-    "add": "Add"
+    "useCurrentPosition": "Use current position",
+    "gpsNotAvailable": "GPS not available",
+    "add": "Add",
+    "trailDraw": "Click on the map to trace the path",
+    "trailPoints": "{count} points traced",
+    "finishTrail": "Finish tracing",
+    "undoLastPoint": "Undo last point",
+    "trailMinPoints": "At least 2 points required"
   }
 }
 
