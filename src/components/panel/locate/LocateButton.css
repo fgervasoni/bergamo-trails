@@ -14,9 +14,11 @@
     padding: 0;
 }
 
-.cai-locate-btn:hover:not(:disabled) {
-    background: var(--bg-hover);
-    color: var(--accent-text);
+@media (hover: hover) {
+    .cai-locate-btn:hover:not(:disabled):not(.active) {
+        background: var(--bg-hover);
+        color: var(--accent-text);
+    }
 }
 
 .cai-locate-btn:active:not(:disabled) { background: var(--clear-btn-hover); }
@@ -27,7 +29,9 @@
     color: var(--error-color);
 }
 
-.cai-locate-btn.active {
+.cai-locate-btn.active,
+.cai-locate-btn.active:focus,
+.cai-locate-btn.active:hover {
     background: var(--accent-text);
     color: white;
 }
