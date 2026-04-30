@@ -9,9 +9,15 @@
     import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
     import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
     import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-    import {clearHighlight, mapState, openCustomPopup, setHighlight, setRefreshLayerFn} from '../../stores/mapStore.svelte.js';
+    import {
+        clearHighlight,
+        mapState,
+        openCustomPopup,
+        setHighlight,
+        setRefreshLayerFn
+    } from '../../stores/mapStore.svelte.js';
     import {getT} from '../../assets/i18n/i18n.svelte.js';
-    import {fetchSentieri, fetchRifugi, fetchVette} from '../../services/trailsService.js';
+    import {fetchRifugi, fetchSentieri, fetchVette} from '../../services/trailsService.js';
     import {buildPopupData} from '../../utils/popupUtils.js';
 
     let t = $derived(getT());
@@ -31,7 +37,7 @@
     }
 
     onMount(async () => {
-        const map = new Map({basemap: 'topo-vector'});
+        const map = new Map({basemap: 'osm'});
 
         const view = new MapView({
             container,
@@ -134,7 +140,13 @@
                 clearHighlight();
                 setHighlight(lv.highlight(graphic));
 
-                const {title, fields, editable, featureId, layerTitle} = buildPopupData(graphic.attributes, graphic.layer?.title, t);
+                const {
+                    title,
+                    fields,
+                    editable,
+                    featureId,
+                    layerTitle
+                } = buildPopupData(graphic.attributes, graphic.layer?.title, t);
                 // Estrai coordinate per punti (rifugi, vette)
                 const geom = graphic.geometry;
                 const coordinates = geom?.type === 'point'
@@ -153,9 +165,9 @@
         // ── Refresh layer callback ───────────────────────────────
         setRefreshLayerFn(async (layerTitle) => {
             const fetchMap = {
-                Sentieri: { fetch: fetchSentieri, rendererFn: () => sentieriRenderer, stateKey: 'sentieriLayer' },
-                Rifugi:   { fetch: fetchRifugi,   rendererFn: () => rifugiRenderer,   stateKey: 'rifugiLayer' },
-                Vette:    { fetch: fetchVette,     rendererFn: () => vetteRenderer,    stateKey: 'vetteLayer' }
+                Sentieri: {fetch: fetchSentieri, rendererFn: () => sentieriRenderer, stateKey: 'sentieriLayer'},
+                Rifugi: {fetch: fetchRifugi, rendererFn: () => rifugiRenderer, stateKey: 'rifugiLayer'},
+                Vette: {fetch: fetchVette, rendererFn: () => vetteRenderer, stateKey: 'vetteLayer'}
             };
             const cfg = fetchMap[layerTitle];
             if (!cfg) return;
