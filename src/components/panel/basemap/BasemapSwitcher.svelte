@@ -1,18 +1,34 @@
 <script>
     import './BasemapSwitcher.css';
-    import {Map, Mountain, Satellite} from 'lucide-svelte';
     import {mapState} from '../../../stores/mapStore.svelte.js';
     import {getT} from '../../../assets/i18n/i18n.svelte.js';
 
     let t = $derived(getT());
 
     const STORAGE_KEY = 'cai-basemap';
-    const DEFAULT_BASEMAP = 'topo-vector';
+    const DEFAULT_BASEMAP = 'osm';
 
     const basemapDefs = [
-        {id: 'topo-vector', labelKey: 'topographic', Icon: Mountain},
-        {id: 'satellite', labelKey: 'satellite', Icon: Satellite},
-        {id: 'streets-navigation-vector', labelKey: 'streets', Icon: Map},
+        {
+            id: 'osm',
+            labelKey: 'osm',
+            thumbnail: 'https://js.arcgis.com/4.31/esri/images/basemap/osm.jpg'
+        },
+        {
+            id: 'topo-vector',
+            labelKey: 'topographic',
+            thumbnail: 'https://js.arcgis.com/4.31/esri/images/basemap/topo-vector.jpg'
+        },
+        {
+            id: 'terrain',
+            labelKey: 'terrain',
+            thumbnail: 'https://js.arcgis.com/4.31/esri/images/basemap/terrain.jpg'
+        },
+        {
+            id: 'satellite',
+            labelKey: 'satellite',
+            thumbnail: 'https://js.arcgis.com/4.31/esri/images/basemap/satellite.jpg'
+        },
     ];
 
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -36,7 +52,7 @@
 </script>
 
 <div aria-label={t.section.basemap} class="cai-basemap-switcher" role="radiogroup">
-    {#each basemapDefs as {id, labelKey, Icon}}
+    {#each basemapDefs as {id, labelKey, thumbnail}}
         <button
                 class="cai-basemap-option"
                 class:active={active === id}
@@ -45,8 +61,15 @@
                 aria-checked={active === id}
                 title={t.basemap[labelKey]}
         >
-            <Icon size={16} strokeWidth={2}/>
-            <span>{t.basemap[labelKey]}</span>
+            <div class="cai-basemap-thumb-wrap">
+                <img
+                        src={thumbnail}
+                        alt={t.basemap[labelKey]}
+                        class="cai-basemap-thumb"
+                        loading="lazy"
+                />
+            </div>
+            <span class="cai-basemap-label">{t.basemap[labelKey]}</span>
         </button>
     {/each}
 </div>

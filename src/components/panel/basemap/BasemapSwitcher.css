@@ -9,28 +9,55 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    padding: 10px 4px;
-    border: 1.5px solid transparent;
+    padding: 4px;
+    border: 2px solid transparent;
     border-radius: 10px;
     background: var(--bg-input);
     color: var(--text-muted);
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
     transition: all 0.2s;
+    overflow: hidden;
 }
 
 .cai-basemap-option:hover {
-    background: var(--bg-hover);
+    border-color: var(--text-muted);
     color: var(--text-heading);
 }
 
 .cai-basemap-option.active {
-    background: var(--bg-active);
     border-color: var(--accent);
     color: var(--accent-text);
+    box-shadow: 0 0 0 1px var(--accent);
 }
 
-.cai-basemap-option.active svg { color: var(--accent-icon); }
+.cai-basemap-thumb-wrap {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+}
 
+.cai-basemap-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.2s;
+}
+
+.cai-basemap-option:hover .cai-basemap-thumb {
+    transform: scale(1.05);
+}
+
+.cai-basemap-label {
+    padding: 2px 0;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}

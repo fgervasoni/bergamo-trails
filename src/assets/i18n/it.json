@@ -32,8 +32,9 @@
   },
   "basemap": {
     "topographic": "Topografica",
+    "terrain": "Rilievo",
     "satellite": "Satellite",
-    "streets": "Stradale"
+    "osm": "OpenStreetMap"
   },
   "legend": {
     "title": "Legenda",
@@ -67,6 +68,8 @@
     "coordinates": "Coordinate",
     "latitude": "Latitudine",
     "longitude": "Longitudine",
+    "pickPosition": "Seleziona sulla mappa",
+    "changePosition": "Cambia posizione",
     "fieldLabels": {
       "numero_cai": "Numero CAI",
       "difficolta": "Difficoltà",

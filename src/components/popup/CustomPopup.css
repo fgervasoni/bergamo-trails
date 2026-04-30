@@ -307,6 +307,44 @@
     font-size: 0.78rem;
 }
 
+.cai-popup-pick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border: 1.5px dashed var(--border-section);
+    border-radius: 6px;
+    background: none;
+    font-size: 0.76rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-top: 2px;
+}
+
+.cai-popup-pick-btn:hover {
+    border-color: #2d6a4f;
+    background: rgba(45, 106, 79, 0.05);
+}
+
+.cai-popup-pick-btn.active {
+    border-color: #e76f51;
+    color: #e76f51;
+    animation: cai-pulse-pick 1.2s infinite;
+}
+
+.cai-popup-pick-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@keyframes cai-pulse-pick {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
 @media (max-width: 540px) {
     .cai-popup-card {
         bottom: auto;

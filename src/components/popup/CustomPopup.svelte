@@ -1,11 +1,14 @@
 <script>
     import './CustomPopup.css';
-    import {Pencil, Trash2, X, Check, Loader} from 'lucide-svelte';
-    import {closeCustomPopup, popupState, refreshLayer} from '../../stores/mapStore.svelte.js';
+    import {Pencil, Trash2, X, Check, Loader, MapPinPlus} from 'lucide-svelte';
+    import {closeCustomPopup, mapState, popupState, refreshLayer} from '../../stores/mapStore.svelte.js';
     import {getT} from '../../assets/i18n/i18n.svelte.js';
     import {updateRifugio, updateVetta, deleteRifugio, deleteVetta} from '../../services/trailsService.js';
     import {getModel, castValue, inputTypeFor} from '../../models/schema.js';
     import {authState} from '../../stores/authStore.svelte.js';
+    import Graphic from '@arcgis/core/Graphic';
+    import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
+    import Point from '@arcgis/core/geometry/Point';
 
     let t = $derived(getT());
 
@@ -15,6 +18,7 @@
     let saving = $state(false);
     let deleting = $state(false);
     let confirmingDelete = $state(false);
+    let pickingLocation = $state(false);
     let saveStatus = $state(''); // '' | 'success' | 'error' | 'deleted' | 'deleteError'
 
     let cachedTitle = $state('');
@@ -26,8 +30,9 @@
 
     /** Copia editabile dei valori durante la modifica */
     let editValues = $state({});
-    let editLat = $state('');
-    let editLng = $state('');
+    let editCoords = $state(null); // { latitude, longitude } — null = non modificate
+    let clickHandler = null;
+    let previewGraphic = null;
 
     $effect(() => {
         if (popupState.open) {
@@ -56,6 +61,8 @@
     });
 
     function dismiss() {
+        stopPicking();
+        cleanupPreview();
         closing = true;
         setTimeout(() => {
             visible = false;
@@ -78,11 +85,7 @@
             }
             editValues[field.key] = val;
         }
-        // Inizializza coordinate editabili
-        if (cachedCoordinates) {
-            editLat = String(cachedCoordinates.latitude);
-            editLng = String(cachedCoordinates.longitude);
-        }
+        editCoords = null;
         saveStatus = '';
         confirmingDelete = false;
         editing = true;
@@ -92,6 +95,57 @@
         editing = false;
         saveStatus = '';
         confirmingDelete = false;
+        stopPicking();
+        cleanupPreview();
+        editCoords = null;
+    }
+
+    function startPicking() {
+        const view = mapState.view;
+        if (!view) return;
+        pickingLocation = true;
+        view.container.style.cursor = 'crosshair';
+
+        clickHandler = view.on('click', (event) => {
+            event.stopPropagation();
+            const pt = event.mapPoint;
+            editCoords = { latitude: pt.latitude, longitude: pt.longitude };
+
+            // Preview marker
+            cleanupPreview();
+            const layer = mapState.locationLayer;
+            if (layer) {
+                previewGraphic = new Graphic({
+                    geometry: new Point({ longitude: pt.longitude, latitude: pt.latitude }),
+                    symbol: new SimpleMarkerSymbol({
+                        style: 'diamond',
+                        color: [255, 215, 0, 0.9],
+                        size: 14,
+                        outline: { color: '#333', width: 2 }
+                    })
+                });
+                layer.add(previewGraphic);
+            }
+            stopPicking();
+        });
+    }
+
+    function stopPicking() {
+        pickingLocation = false;
+        if (clickHandler) {
+            clickHandler.remove();
+            clickHandler = null;
+        }
+        const view = mapState.view;
+        if (view) view.container.style.cursor = '';
+    }
+
+    function cleanupPreview() {
+        const layer = mapState.locationLayer;
+        if (layer && previewGraphic) {
+            layer.remove(previewGraphic);
+            previewGraphic = null;
+        }
     }
 
     async function saveEdit() {
@@ -112,13 +166,9 @@
             updates[field.key] = castValue(val, def);
         }
 
-        // Aggiorna coordinate se modificate
-        if (cachedCoordinates && editLat && editLng) {
-            const lat = parseFloat(editLat);
-            const lng = parseFloat(editLng);
-            if (!isNaN(lat) && !isNaN(lng)) {
-                updates.geom = `SRID=4326;POINT(${lng} ${lat})`;
-            }
+        // Aggiorna coordinate se l'utente ha selezionato un nuovo punto
+        if (editCoords) {
+            updates.geom = `SRID=4326;POINT(${editCoords.longitude} ${editCoords.latitude})`;
         }
 
         try {
@@ -129,12 +179,10 @@
                     ...f,
                     value: formatDisplayValue(f.key, updates[f.key])
                 }));
-                if (editLat && editLng) {
-                    cachedCoordinates = {
-                        latitude: parseFloat(editLat),
-                        longitude: parseFloat(editLng)
-                    };
+                if (editCoords) {
+                    cachedCoordinates = { ...editCoords };
                 }
+                cleanupPreview();
                 saveStatus = 'success';
                 // Refresh layer sulla mappa
                 await refreshLayer(cachedLayerTitle);
@@ -246,22 +294,27 @@
                         />
                     </div>
                 {/each}
-                <!-- Coordinate editabili -->
+                <!-- Coordinate: pick on map -->
                 {#if cachedCoordinates}
                     <div class="cai-popup-coords-section">
                         <span class="cai-popup-field-label">{t.popup.coordinates}</span>
-                        <div class="cai-popup-coords-row">
-                            <div class="cai-popup-coord-field">
-                                <label class="cai-popup-coord-label" for="edit-lat">{t.popup.latitude}</label>
-                                <input id="edit-lat" class="cai-popup-input" type="number" step="any"
-                                       bind:value={editLat} disabled={saving} placeholder="45.xxx"/>
-                            </div>
-                            <div class="cai-popup-coord-field">
-                                <label class="cai-popup-coord-label" for="edit-lng">{t.popup.longitude}</label>
-                                <input id="edit-lng" class="cai-popup-input" type="number" step="any"
-                                       bind:value={editLng} disabled={saving} placeholder="9.xxx"/>
-                            </div>
-                        </div>
+                        <span class="cai-popup-coords-value">
+                            {#if editCoords}
+                                {editCoords.latitude.toFixed(5)}, {editCoords.longitude.toFixed(5)}
+                            {:else}
+                                {cachedCoordinates.latitude.toFixed(5)}, {cachedCoordinates.longitude.toFixed(5)}
+                            {/if}
+                        </span>
+                        <button
+                            class="cai-popup-pick-btn"
+                            class:active={pickingLocation}
+                            onclick={startPicking}
+                            disabled={saving}
+                            type="button"
+                        >
+                            <MapPinPlus size={14} strokeWidth={2}/>
+                            {editCoords ? t.popup.changePosition : t.popup.pickPosition}
+                        </button>
                     </div>
                 {/if}
                 <div class="cai-popup-edit-actions">

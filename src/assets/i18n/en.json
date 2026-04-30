@@ -32,8 +32,9 @@
   },
   "basemap": {
     "topographic": "Topographic",
+    "terrain": "Terrain",
     "satellite": "Satellite",
-    "streets": "Streets"
+    "osm": "OpenStreetMap"
   },
   "legend": {
     "title": "Legend",
@@ -67,6 +68,8 @@
     "coordinates": "Coordinates",
     "latitude": "Latitude",
     "longitude": "Longitude",
+    "pickPosition": "Pick on map",
+    "changePosition": "Change position",
     "fieldLabels": {
       "numero_cai": "CAI Number",
       "difficolta": "Difficulty",
