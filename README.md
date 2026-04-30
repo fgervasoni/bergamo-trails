@@ -55,7 +55,7 @@ src/
 │
 ├── components/
 │   ├── map/
-│   │   ├── MapContainer.svelte        # Mappa Esri, FeatureLayer, click handler
+│   │   ├── MapContainer.svelte        # Mappa Esri, GeoJSONLayer da Supabase, click handler
 │   │   └── MapContainer.css
 │   │
 │   ├── panel/
@@ -125,12 +125,7 @@ I file di output vengono generati nella cartella `dist/`.
 
 ## Dati
 
-I dati geografici sono forniti dal servizio cartografico **Maggioli S.p.A.** per conto di **CAI Bergamo**:
-
-| Layer    | URL                                                                                                  |
-|----------|------------------------------------------------------------------------------------------------------|
-| Rifugi   | [MapServer/0](https://cartografia01.maggioli.cloud/arcgis/rest/services/CAI_Bergamo/CAI/MapServer/0) |
-| Sentieri | [MapServer/1](https://cartografia01.maggioli.cloud/arcgis/rest/services/CAI_Bergamo/CAI/MapServer/1) |
+I dati geografici provengono dal servizio cartografico **Maggioli S.p.A.** per conto di **CAI Bergamo** e sono serviti tramite **Supabase (PostGIS)** in formato GeoJSON.
 
 Il geocoding degli indirizzi utilizza
 il [World Geocoding Service](https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer) di Esri.

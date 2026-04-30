@@ -133,7 +133,7 @@
             </div>
             <div class="cai-panel-credits">
                 <span>{t.footer.dataSource}</span>
-                <a href="https://cartografia01.maggioli.cloud/arcgis/rest/services/CAI_Bergamo/CAI/MapServer"
+                <a href="https://www.caibergamo.it"
                    rel="noopener noreferrer" target="_blank">CAI Bergamo</a>
             </div>
         </div>

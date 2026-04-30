@@ -3,7 +3,7 @@
     import {onDestroy, onMount} from 'svelte';
     import Map from '@arcgis/core/Map';
     import MapView from '@arcgis/core/views/MapView';
-    import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+    import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
     import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
     import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
     import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
@@ -11,6 +11,7 @@
     import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
     import {clearHighlight, mapState, openCustomPopup, setHighlight} from '../../stores/mapStore.svelte.js';
     import {getT} from '../../assets/i18n/i18n.svelte.js';
+    import {fetchSentieri, fetchRifugi} from '../../services/trailsService.js';
 
     let t = $derived(getT());
 
@@ -19,6 +20,14 @@
         }
     } = $props();
     let container;
+
+    /**
+     * Crea un Blob URL da un oggetto GeoJSON per alimentare un GeoJSONLayer ArcGIS.
+     */
+    function geojsonToUrl(geojson) {
+        const blob = new Blob([JSON.stringify(geojson)], {type: 'application/json'});
+        return URL.createObjectURL(blob);
+    }
 
     onMount(async () => {
         const map = new Map({basemap: 'topo-vector'});
@@ -34,8 +43,15 @@
 
         view.ui.components = [];
 
+        // ── Carica dati da Supabase ──────────────────────────────
+        const [sentieriGeoJSON, rifugiGeoJSON] = await Promise.all([
+            fetchSentieri(),
+            fetchRifugi()
+        ]);
+
+        // ── Sentieri (GeoJSON) ───────────────────────────────────
         const sentieriRenderer = new UniqueValueRenderer({
-            field: 'Difficolta',
+            field: 'difficolta',
             defaultSymbol: new SimpleLineSymbol({color: '#999999', width: 2.5}),
             uniqueValueInfos: [
                 {value: 'T', symbol: new SimpleLineSymbol({color: '#ff0000', width: 2.5})},
@@ -45,15 +61,16 @@
             ]
         });
 
-        const sentieriLayer = new FeatureLayer({
-            url: 'https://cartografia01.maggioli.cloud/arcgis/rest/services/CAI_Bergamo/CAI/MapServer/1',
-            title: 'Sentieri',
-            minScale: 0,
-            maxScale: 0,
-            outFields: ['*'],
-            renderer: sentieriRenderer
-        });
+        const sentieriLayer = sentieriGeoJSON
+            ? new GeoJSONLayer({
+                url: geojsonToUrl(sentieriGeoJSON),
+                title: 'Sentieri',
+                outFields: ['*'],
+                renderer: sentieriRenderer
+            })
+            : null;
 
+        // ── Rifugi (GeoJSON) ─────────────────────────────────────
         const rifugiRenderer = new SimpleRenderer({
             symbol: new SimpleMarkerSymbol({
                 style: 'circle',
@@ -63,27 +80,29 @@
             })
         });
 
-        const rifugiLayer = new FeatureLayer({
-            url: 'https://cartografia01.maggioli.cloud/arcgis/rest/services/CAI_Bergamo/CAI/MapServer/0',
-            title: 'Rifugi',
-            minScale: 0,
-            maxScale: 0,
-            outFields: ['*'],
-            renderer: rifugiRenderer
-        });
+        const rifugiLayer = rifugiGeoJSON
+            ? new GeoJSONLayer({
+                url: geojsonToUrl(rifugiGeoJSON),
+                title: 'Rifugi',
+                outFields: ['*'],
+                renderer: rifugiRenderer
+            })
+            : null;
 
-        map.addMany([sentieriLayer, rifugiLayer]);
+        if (sentieriLayer) map.add(sentieriLayer);
+        if (rifugiLayer) map.add(rifugiLayer);
 
         const locationLayer = new GraphicsLayer({title: 'Posizione'});
         map.add(locationLayer);
 
         await view.when();
-        await sentieriLayer.when();
+        if (sentieriLayer) await sentieriLayer.when();
 
         view.goTo({center: [9.67, 45.7], zoom: 11});
 
+        const clickLayers = [sentieriLayer, rifugiLayer].filter(Boolean);
         view.on('click', async (event) => {
-            const response = await view.hitTest(event, {include: [sentieriLayer, rifugiLayer]});
+            const response = await view.hitTest(event, {include: clickLayers});
             const result = response.results[0];
             if (result?.type === 'graphic') {
                 const graphic = result.graphic;
@@ -109,10 +128,10 @@
 
         if (layer?.title === 'Sentieri') {
             return {
-                title: `${t.popup.trail} ${attrs.NumeroCAI || ''}`,
+                title: `${t.popup.trail} ${attrs.numero_cai || ''}`,
                 fields: [
-                    {label: t.popup.caiNumber, value: attrs.NumeroCAI},
-                    {label: t.popup.difficulty, value: attrs.Difficolta}
+                    {label: t.popup.caiNumber, value: attrs.numero_cai},
+                    {label: t.popup.difficulty, value: attrs.difficolta}
                 ]
             };
         }
@@ -121,7 +140,7 @@
                 title: attrs.nome || t.search?.shelter || 'Rifugio',
                 fields: [
                     {label: t.popup.name, value: attrs.nome},
-                    {label: t.popup.ownership, value: attrs.propriet},
+                    {label: t.popup.ownership, value: attrs.proprieta},
                     {label: t.popup.altitude, value: attrs.quota ? `${attrs.quota} m` : null}
                 ]
             };
