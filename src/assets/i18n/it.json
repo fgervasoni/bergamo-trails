@@ -22,9 +22,11 @@
     "address": "Indirizzo"
   },
   "locate": {
-    "label": "Localizzami",
+    "label": "Tracciamento GPS",
+    "stopLabel": "Ferma tracciamento",
     "error": "Non disponibile",
-    "title": "Vai alla tua posizione",
+    "title": "Avvia tracciamento posizione",
+    "stopTitle": "Ferma tracciamento posizione",
     "errorTitle": "Impossibile localizzarti"
   },
   "basemap": {

@@ -27,6 +27,11 @@
     color: var(--error-color);
 }
 
+.cai-locate-btn.active {
+    background: var(--accent-text);
+    color: white;
+}
+
 .cai-locate-btn .cai-spinning {
     animation: cai-spin 1s linear infinite;
 }

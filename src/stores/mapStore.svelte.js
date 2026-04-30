@@ -1,5 +1,5 @@
-/** @type {{ view: import('@arcgis/core/views/MapView').default | null, sentieriLayer: any, rifugiLayer: any, locationLayer: any }} */
-export const mapState = $state({ view: null, sentieriLayer: null, rifugiLayer: null, locationLayer: null });
+/** @type {{ view: import('@arcgis/core/views/MapView').default | null, sentieriLayer: any, rifugiLayer: any, locationLayer: any, tracking: boolean, watchId: number|null }} */
+export const mapState = $state({ view: null, sentieriLayer: null, rifugiLayer: null, locationLayer: null, tracking: false, watchId: null });
 
 export const uiState = $state({ panelOpen: true, settingsOpen: false });
 

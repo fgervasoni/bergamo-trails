@@ -8,9 +8,7 @@
     import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
     import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
     import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
-    import Graphic from '@arcgis/core/Graphic';
     import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-    import Point from '@arcgis/core/geometry/Point';
     import {clearHighlight, mapState, openCustomPopup, setHighlight} from '../../stores/mapStore.svelte.js';
     import {getT} from '../../assets/i18n/i18n.svelte.js';
 
@@ -82,19 +80,7 @@
         await view.when();
         await sentieriLayer.when();
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const pt = new Point({longitude: pos.coords.longitude, latitude: pos.coords.latitude});
-                    addLocationGraphic(locationLayer, pt);
-                    view.goTo({center: pt, zoom: 15});
-                },
-                () => {
-                    view.goTo({center: [9.67, 45.7], zoom: 11});
-                },
-                {enableHighAccuracy: true, timeout: 5000}
-            );
-        }
+        view.goTo({center: [9.67, 45.7], zoom: 11});
 
         view.on('click', async (event) => {
             const response = await view.hitTest(event, {include: [sentieriLayer, rifugiLayer]});
@@ -143,31 +129,13 @@
         return {title: t.popup.details, fields: []};
     }
 
-    function addLocationGraphic(layer, point) {
-        layer.removeAll();
-        const halo = new Graphic({
-            geometry: point,
-            symbol: new SimpleMarkerSymbol({
-                style: 'circle',
-                color: [66, 133, 244, 0.15],
-                size: 40,
-                outline: {color: [66, 133, 244, 0.3], width: 1}
-            })
-        });
-        const dot = new Graphic({
-            geometry: point,
-            symbol: new SimpleMarkerSymbol({
-                style: 'circle',
-                color: [66, 133, 244, 0.9],
-                size: 14,
-                outline: {color: 'white', width: 2.5}
-            })
-        });
-        layer.addMany([halo, dot]);
-    }
-
     onDestroy(() => {
         clearHighlight();
+        if (mapState.watchId != null) {
+            navigator.geolocation.clearWatch(mapState.watchId);
+            mapState.watchId = null;
+            mapState.tracking = false;
+        }
         mapState.view?.destroy();
         mapState.view = null;
     });

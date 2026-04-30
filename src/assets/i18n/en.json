@@ -22,9 +22,11 @@
     "address": "Address"
   },
   "locate": {
-    "label": "Locate me",
+    "label": "GPS Tracking",
+    "stopLabel": "Stop tracking",
     "error": "Not available",
-    "title": "Go to your position",
+    "title": "Start position tracking",
+    "stopTitle": "Stop position tracking",
     "errorTitle": "Unable to locate you"
   },
   "basemap": {
