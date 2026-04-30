@@ -48,11 +48,21 @@
     "close": "Close",
     "details": "Details",
     "trail": "Trail",
-    "caiNumber": "CAI Number",
-    "difficulty": "Difficulty",
-    "name": "Name",
-    "ownership": "Ownership",
-    "altitude": "Altitude"
+    "shelter": "Shelter",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "saveSuccess": "Saved!",
+    "saveError": "Error saving",
+    "fieldLabels": {
+      "numero_cai": "CAI Number",
+      "difficolta": "Difficulty",
+      "descrizione": "Description",
+      "nome": "Name",
+      "proprieta": "Ownership",
+      "quota": "Altitude"
+    }
   },
   "settings": {
     "language": "Language",

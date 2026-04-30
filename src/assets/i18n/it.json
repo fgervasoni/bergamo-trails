@@ -48,11 +48,21 @@
     "close": "Chiudi",
     "details": "Dettagli",
     "trail": "Sentiero",
-    "caiNumber": "Numero CAI",
-    "difficulty": "Difficoltà",
-    "name": "Nome",
-    "ownership": "Proprietà",
-    "altitude": "Quota"
+    "shelter": "Rifugio",
+    "edit": "Modifica",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "saving": "Salvataggio...",
+    "saveSuccess": "Salvato!",
+    "saveError": "Errore nel salvataggio",
+    "fieldLabels": {
+      "numero_cai": "Numero CAI",
+      "difficolta": "Difficoltà",
+      "descrizione": "Descrizione",
+      "nome": "Nome",
+      "proprieta": "Proprietà",
+      "quota": "Quota"
+    }
   },
   "settings": {
     "language": "Lingua",

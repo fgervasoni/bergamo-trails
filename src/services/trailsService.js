@@ -61,6 +61,10 @@ export async function updateRifugio(id, updates) {
         console.error('Errore aggiornamento rifugio:', error);
         return null;
     }
+    if (!data || data.length === 0) {
+        console.error('Aggiornamento rifugio: nessuna riga modificata (controlla le policy RLS su Supabase)');
+        return null;
+    }
     return data;
 }
 

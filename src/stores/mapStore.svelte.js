@@ -6,7 +6,10 @@ export const uiState = $state({ panelOpen: true, settingsOpen: false });
 export const popupState = $state({
     open: false,
     title: '',
-    fields: []
+    fields: [],
+    editable: false,
+    featureId: null,
+    layerTitle: ''
 });
 
 /** Highlight handle — plain variable (no proxy) per compatibilità con Esri */
@@ -23,12 +26,15 @@ export function clearHighlight() {
     }
 }
 
-export function openCustomPopup(title, fields) {
+export function openCustomPopup(title, fields, { editable = false, featureId = null, layerTitle = '' } = {}) {
     if (window.innerWidth <= 540) {
         uiState.panelOpen = false;
     }
     popupState.title = title;
     popupState.fields = fields;
+    popupState.editable = editable;
+    popupState.featureId = featureId;
+    popupState.layerTitle = layerTitle;
     popupState.open = true;
 }
 
@@ -36,6 +42,9 @@ export function closeCustomPopup() {
     popupState.open = false;
     popupState.title = '';
     popupState.fields = [];
+    popupState.editable = false;
+    popupState.featureId = null;
+    popupState.layerTitle = '';
     clearHighlight();
 }
 

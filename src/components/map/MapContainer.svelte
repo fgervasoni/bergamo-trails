@@ -12,6 +12,7 @@
     import {clearHighlight, mapState, openCustomPopup, setHighlight} from '../../stores/mapStore.svelte.js';
     import {getT} from '../../assets/i18n/i18n.svelte.js';
     import {fetchSentieri, fetchRifugi} from '../../services/trailsService.js';
+    import {buildPopupData} from '../../utils/popupUtils.js';
 
     let t = $derived(getT());
 
@@ -110,8 +111,8 @@
                 clearHighlight();
                 setHighlight(lv.highlight(graphic));
 
-                const {title, fields} = buildPopupData(graphic);
-                openCustomPopup(title, fields);
+                const {title, fields, editable, featureId, layerTitle} = buildPopupData(graphic.attributes, graphic.layer?.title, t);
+                openCustomPopup(title, fields, {editable, featureId, layerTitle});
             }
         });
 
@@ -122,31 +123,6 @@
         onReady();
     });
 
-    function buildPopupData(graphic) {
-        const attrs = graphic.attributes;
-        const layer = graphic.layer;
-
-        if (layer?.title === 'Sentieri') {
-            return {
-                title: `${t.popup.trail} ${attrs.numero_cai || ''}`,
-                fields: [
-                    {label: t.popup.caiNumber, value: attrs.numero_cai},
-                    {label: t.popup.difficulty, value: attrs.difficolta}
-                ]
-            };
-        }
-        if (layer?.title === 'Rifugi') {
-            return {
-                title: attrs.nome || t.search?.shelter || 'Rifugio',
-                fields: [
-                    {label: t.popup.name, value: attrs.nome},
-                    {label: t.popup.ownership, value: attrs.proprieta},
-                    {label: t.popup.altitude, value: attrs.quota ? `${attrs.quota} m` : null}
-                ]
-            };
-        }
-        return {title: t.popup.details, fields: []};
-    }
 
     onDestroy(() => {
         clearHighlight();

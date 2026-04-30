@@ -11,6 +11,7 @@
     } from '../../../stores/mapStore.svelte.js';
     import {addressToLocations} from '@arcgis/core/rest/locator.js';
     import {getT} from '../../../assets/i18n/i18n.svelte.js';
+    import {buildPopupData} from '../../../utils/popupUtils.js';
 
     let t = $derived(getT());
 
@@ -37,7 +38,7 @@
 
             if (mapState.sentieriLayer) {
                 const sentieriQuery = mapState.sentieriLayer.createQuery();
-                sentieriQuery.where = `NumeroCAI LIKE '%${text.replace(/'/g, "''")}%'`;
+                sentieriQuery.where = `numero_cai LIKE '%${text.replace(/'/g, "''")}%'`;
                 sentieriQuery.outFields = ['*'];
                 sentieriQuery.returnGeometry = true;
                 sentieriQuery.num = 5;
@@ -45,7 +46,7 @@
                     const sRes = await mapState.sentieriLayer.queryFeatures(sentieriQuery);
                     for (const f of sRes.features) {
                         allResults.push({
-                            text: `${t.search.trail} ${f.attributes.NumeroCAI} (${f.attributes.Difficolta || 'N/D'})`,
+                            text: `${t.search.trail} ${f.attributes.numero_cai} (${f.attributes.difficolta || 'N/D'})`,
                             type: 'sentiero',
                             geometry: f.geometry,
                             feature: f,
@@ -146,18 +147,9 @@
                 }
 
                 const attrs = result.feature.attributes;
-                if (result.type === 'sentiero') {
-                    openCustomPopup(`${t.popup.trail} ${attrs.NumeroCAI || ''}`, [
-                        {label: t.popup.caiNumber, value: attrs.NumeroCAI},
-                        {label: t.popup.difficulty, value: attrs.Difficolta}
-                    ]);
-                } else if (result.type === 'rifugio') {
-                    openCustomPopup(attrs.nome || t.search.shelter, [
-                        {label: t.popup.name, value: attrs.nome},
-                        {label: t.popup.ownership, value: attrs.propriet},
-                        {label: t.popup.altitude, value: attrs.quota ? `${attrs.quota} m` : null}
-                    ]);
-                }
+                const lTitle = result.layer?.title || '';
+                const {title, fields, editable, featureId, layerTitle: lt} = buildPopupData(attrs, lTitle, t);
+                openCustomPopup(title, fields, {editable, featureId, layerTitle: lt});
             }
         } else if (result.location) {
             if (window.innerWidth <= 540) uiState.panelOpen = false;
