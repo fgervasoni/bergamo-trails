@@ -19,7 +19,6 @@
     let lastPosition = null;
     let deviceHeading = null;
     let orientationListener = null;
-    let orientationRequested = false; // true se il permesso è stato già richiesto da un gesto utente
     let startedByUser = false; // true se il tracking è stato avviato da un click
 
     onMount(async () => {
@@ -34,6 +33,8 @@
                 if (status.state === 'granted') {
                     const waitForView = () => {
                         if (mapState.view) {
+                            // Avvia anche il giroscopio se il permesso è già stato concesso
+                            startDeviceOrientationSilent();
                             startTracking();
                         } else {
                             setTimeout(waitForView, 100);
@@ -133,45 +134,59 @@
 
     /** Avvia l'ascolto della bussola tramite DeviceOrientationEvent (mobile) */
     function startDeviceOrientation() {
-        if (orientationListener || orientationRequested) return;
-        orientationRequested = true;
+        if (orientationListener) return;
 
-        const handler = (e) => {
-            // webkitCompassHeading (iOS) o alpha (Android)
-            let heading = null;
-            if (e.webkitCompassHeading != null) {
-                // iOS: webkitCompassHeading è già il bearing magnetico in gradi (0 = nord)
-                heading = e.webkitCompassHeading;
-            } else if (e.alpha != null) {
-                // Android: alpha è la rotazione attorno all'asse Z
-                // absolute=true significa che è relativo al nord magnetico
-                heading = (360 - e.alpha) % 360;
-            }
-            if (heading != null && !isNaN(heading)) {
-                deviceHeading = heading;
-                // Aggiorna il cono in tempo reale se abbiamo una posizione
-                if (lastPosition && mapState.tracking) {
-                    addLocationGraphic(lastPosition, heading);
-                }
-            }
-        };
+        const handler = createOrientationHandler();
 
         // iOS 13+ richiede permesso esplicito (DEVE essere in un user gesture callstack)
         if (typeof DeviceOrientationEvent !== 'undefined' &&
             typeof DeviceOrientationEvent.requestPermission === 'function') {
             DeviceOrientationEvent.requestPermission().then((state) => {
                 if (state === 'granted') {
+                    localStorage.setItem('cai-orientation-granted', '1');
                     window.addEventListener('deviceorientation', handler, true);
                     orientationListener = handler;
                 }
             }).catch(() => {
-                orientationRequested = false;
             });
         } else if (typeof DeviceOrientationEvent !== 'undefined') {
-            // Android e browser che non richiedono permesso
             window.addEventListener('deviceorientation', handler, true);
             orientationListener = handler;
         }
+    }
+
+    /**
+     * Avvia il giroscopio senza richiedere il permesso (per accessi successivi).
+     * Su iOS il permesso è già stato concesso, basta aggiungere il listener.
+     */
+    function startDeviceOrientationSilent() {
+        if (orientationListener) return;
+        if (typeof DeviceOrientationEvent === 'undefined') return;
+
+        // Su iOS, se il permesso non è mai stato concesso, non aggiungere il listener
+        const wasGranted = localStorage.getItem('cai-orientation-granted');
+        if (typeof DeviceOrientationEvent.requestPermission === 'function' && !wasGranted) return;
+
+        const handler = createOrientationHandler();
+        window.addEventListener('deviceorientation', handler, true);
+        orientationListener = handler;
+    }
+
+    function createOrientationHandler() {
+        return (e) => {
+            let heading = null;
+            if (e.webkitCompassHeading != null) {
+                heading = e.webkitCompassHeading;
+            } else if (e.alpha != null) {
+                heading = (360 - e.alpha) % 360;
+            }
+            if (heading != null && !isNaN(heading)) {
+                deviceHeading = heading;
+                if (lastPosition && mapState.tracking) {
+                    addLocationGraphic(lastPosition, heading);
+                }
+            }
+        };
     }
 
     function stopDeviceOrientation() {
@@ -179,7 +194,6 @@
             window.removeEventListener('deviceorientation', orientationListener, true);
             orientationListener = null;
         }
-        orientationRequested = false;
     }
 
     /**
@@ -264,7 +278,7 @@
                                                     {
                                                         type: 'CIMSolidFill',
                                                         enable: true,
-                                                        color: [66, 133, 244, 70]
+                                                        color: [66, 133, 244, 80]
                                                     }
                                                 ]
                                             }
