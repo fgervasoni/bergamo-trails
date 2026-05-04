@@ -14,39 +14,47 @@
     let locating = $state(false);
     let error = $state(false);
     let tracking = $derived(mapState.tracking);
+    let enabled = $state(false); // true dopo che l'utente accetta il tracciamento
     let firstFix = false;
     let lastHeading = null;
     let lastPosition = null;
     let deviceHeading = null;
     let orientationListener = null;
-    let startedByUser = false; // true se il tracking è stato avviato da un click
+    let startedByUser = false;
+    let showPrompt = $state(false);
 
-    onMount(async () => {
-        // Al primo accesso non avviare il tracciamento automatico,
-        // così al tap manuale verrà richiesto anche il permesso giroscopio
-        const hasTrackedBefore = localStorage.getItem('cai-tracking-granted');
-        if (!hasTrackedBefore) return;
-
-        if (navigator.permissions) {
-            try {
-                const status = await navigator.permissions.query({name: 'geolocation'});
-                if (status.state === 'granted') {
-                    const waitForView = () => {
-                        if (mapState.view) {
-                            // Avvia anche il giroscopio se il permesso è già stato concesso
-                            startDeviceOrientationSilent();
-                            startTracking();
-                        } else {
-                            setTimeout(waitForView, 100);
-                        }
-                    };
-                    waitForView();
+    onMount(() => {
+        const granted = localStorage.getItem('cai-tracking-granted');
+        if (granted) {
+            // L'utente ha già accettato in una sessione precedente
+            enabled = true;
+            const waitForView = () => {
+                if (mapState.view) {
+                    startDeviceOrientationSilent();
+                    startTracking();
+                } else {
+                    setTimeout(waitForView, 100);
                 }
-            } catch (_) {
-                // permissions API non supportata, non fare nulla
-            }
+            };
+            waitForView();
+        } else {
+            // Mostra il prompt al primo accesso
+            showPrompt = true;
         }
     });
+
+    function acceptTracking() {
+        showPrompt = false;
+        enabled = true;
+        localStorage.setItem('cai-tracking-granted', '1');
+        startedByUser = true;
+        startTracking();
+    }
+
+    function declineTracking() {
+        showPrompt = false;
+        enabled = false;
+    }
 
     function toggleTracking(event) {
         event.currentTarget?.blur();
@@ -102,8 +110,6 @@
                 }
                 locating = false;
                 mapState.tracking = true;
-                // Salva che il tracciamento è stato concesso per auto-start futuri
-                localStorage.setItem('cai-tracking-granted', '1');
             },
             () => {
                 error = true;
@@ -157,16 +163,17 @@
 
     /**
      * Avvia il giroscopio senza richiedere il permesso (per accessi successivi).
-     * Su iOS il permesso è già stato concesso, basta aggiungere il listener.
+     * Su iOS il permesso è per-sessione e richiede sempre un gesto utente,
+     * quindi su iOS non lo avviamo in automatico.
      */
     function startDeviceOrientationSilent() {
         if (orientationListener) return;
         if (typeof DeviceOrientationEvent === 'undefined') return;
 
-        // Su iOS, se il permesso non è mai stato concesso, non aggiungere il listener
-        const wasGranted = localStorage.getItem('cai-orientation-granted');
-        if (typeof DeviceOrientationEvent.requestPermission === 'function' && !wasGranted) return;
+        // Su iOS, requestPermission è obbligatorio ogni sessione — skip su auto-start
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') return;
 
+        // Android e altri browser: basta aggiungere il listener
         const handler = createOrientationHandler();
         window.addEventListener('deviceorientation', handler, true);
         orientationListener = handler;
@@ -295,21 +302,38 @@
     }
 </script>
 
-<button
-        aria-label={tracking ? t.locate.stopLabel : t.locate.label}
-        class="cai-locate-btn"
-        class:active={tracking}
-        class:error
-        disabled={locating}
-        onclick={toggleTracking}
-        title={error ? t.locate.errorTitle : (tracking ? t.locate.stopTitle : t.locate.title)}
->
-    {#if locating}
-        <Loader size={16} strokeWidth={2} class="cai-spinning"/>
-    {:else if tracking}
-        <LocateOff size={16} strokeWidth={2}/>
-    {:else}
+{#if showPrompt}
+    <div class="cai-locate-prompt">
+        <button class="cai-locate-prompt-btn" onclick={acceptTracking} aria-label={t.locate.label}>
+            <LocateFixed size={16} strokeWidth={2}/>
+        </button>
+    </div>
+{:else if enabled}
+    <button
+            aria-label={tracking ? t.locate.stopLabel : t.locate.label}
+            class="cai-locate-btn"
+            class:active={tracking}
+            class:error
+            disabled={locating}
+            onclick={toggleTracking}
+            title={error ? t.locate.errorTitle : (tracking ? t.locate.stopTitle : t.locate.title)}
+    >
+        {#if locating}
+            <Loader size={16} strokeWidth={2} class="cai-spinning"/>
+        {:else if tracking}
+            <LocateOff size={16} strokeWidth={2}/>
+        {:else}
+            <LocateFixed size={16} strokeWidth={2}/>
+        {/if}
+    </button>
+{:else}
+    <button
+            aria-label={t.locate.label}
+            class="cai-locate-btn"
+            onclick={() => { enabled = true; localStorage.setItem('cai-tracking-granted', '1'); startedByUser = true; startTracking(); }}
+            title={t.locate.title}
+    >
         <LocateFixed size={16} strokeWidth={2}/>
-    {/if}
-</button>
+    </button>
+{/if}
 

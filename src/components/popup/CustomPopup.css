@@ -341,14 +341,18 @@
 }
 
 @keyframes cai-pulse-pick {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
 @media (max-width: 540px) {
     .cai-popup-card {
         bottom: auto;
-        top: 24px;
+        top: 64px;
         height: min-content;
         width: calc(100% - 16px);
     }

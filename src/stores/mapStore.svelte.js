@@ -16,7 +16,7 @@ export async function refreshLayer(layerTitle) {
     if (_refreshLayerFn) await _refreshLayerFn(layerTitle);
 }
 
-export const uiState = $state({ panelOpen: true, settingsOpen: false });
+export const uiState = $state({ panelOpen: true, settingsOpen: false, mobileAddOpen: false });
 
 export const popupState = $state({
     open: false,
@@ -45,6 +45,7 @@ export function clearHighlight() {
 export function openCustomPopup(title, fields, { editable = false, featureId = null, layerTitle = '', coordinates = null } = {}) {
     if (window.innerWidth <= 540) {
         uiState.panelOpen = false;
+        uiState.mobileAddOpen = false;
     }
     popupState.title = title;
     popupState.fields = fields;

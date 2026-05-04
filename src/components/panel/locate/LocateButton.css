@@ -40,3 +40,35 @@
     animation: cai-spin 1s linear infinite;
 }
 
+.cai-locate-prompt {
+    display: flex;
+}
+
+.cai-locate-prompt-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    background: var(--bg-input);
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+    animation: cai-prompt-pulse 1.5s ease-in-out infinite;
+}
+
+.cai-locate-prompt-btn:hover {
+    background: var(--accent);
+    color: white;
+    transform: scale(1.05);
+}
+
+@keyframes cai-prompt-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(45, 106, 79, 0); }
+}
+
