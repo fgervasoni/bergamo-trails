@@ -106,6 +106,12 @@
   "footer": {
     "madeBy": "Sviluppato da"
   },
+  "gyro": {
+    "title": "Bussola",
+    "message": "Vuoi abilitare la bussola per mostrare la direzione in cui stai guardando?",
+    "accept": "Abilita",
+    "decline": "No, grazie"
+  },
   "addFeature": {
     "title": "Aggiungi",
     "rifugio": "Nuovo Rifugio",

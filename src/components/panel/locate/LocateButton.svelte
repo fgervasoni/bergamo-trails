@@ -14,38 +14,59 @@
     let locating = $state(false);
     let error = $state(false);
     let tracking = $derived(mapState.tracking);
-    let enabled = $state(false); // true dopo che l'utente accetta il tracciamento
     let firstFix = false;
-    let lastHeading = null;
     let lastPosition = null;
     let deviceHeading = null;
     let orientationListener = null;
-    let startedByUser = false;
-    let showPrompt = $state(false);
 
-    onMount(() => {
-        const granted = localStorage.getItem('cai-tracking-granted');
-        if (granted) {
-            // L'utente ha già accettato in precedenza, abilita il pulsante ma non avviare automaticamente
-            // Così dovrà premere il pulsante e iOS chiederà il permesso giroscopio ogni sessione
-            enabled = true;
-        } else {
-            // Mostra il prompt al primo accesso
-            showPrompt = true;
+    onMount(async () => {
+        // Avvia il GPS automaticamente se il permesso è già concesso
+        if (navigator.permissions) {
+            try {
+                const status = await navigator.permissions.query({name: 'geolocation'});
+                if (status.state === 'granted') {
+                    const waitForView = () => {
+                        if (mapState.view) {
+                            startTracking();
+                        } else {
+                            setTimeout(waitForView, 100);
+                        }
+                    };
+                    waitForView();
+                }
+            } catch (_) {}
         }
+
+        // Ascolta il giroscopio se il permesso è già stato concesso in questa sessione
+        listenForOrientation();
     });
 
-    function acceptTracking() {
-        showPrompt = false;
-        enabled = true;
-        localStorage.setItem('cai-tracking-granted', '1');
-        startedByUser = true;
-        startTracking();
+    /**
+     * Ascolta il giroscopio. Su Android basta aggiungere il listener.
+     * Su iOS, il permesso viene gestito dal popup modale in App.svelte.
+     * Questa funzione viene chiamata anche da fuori (dopo che il permesso è concesso).
+     */
+    export function listenForOrientation() {
+        if (orientationListener) return;
+        if (typeof DeviceOrientationEvent === 'undefined') return;
+
+        // Su iOS, non aggiungere il listener se requestPermission esiste
+        // (verrà chiamato startOrientationAfterPermission dall'esterno)
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') return;
+
+        const handler = createOrientationHandler();
+        window.addEventListener('deviceorientation', handler, true);
+        orientationListener = handler;
     }
 
-    function declineTracking() {
-        showPrompt = false;
-        enabled = false;
+    /**
+     * Chiamata dopo che il permesso iOS è stato concesso (dal popup modale).
+     */
+    export function startOrientationAfterPermission() {
+        if (orientationListener) return;
+        const handler = createOrientationHandler();
+        window.addEventListener('deviceorientation', handler, true);
+        orientationListener = handler;
     }
 
     function toggleTracking(event) {
@@ -53,7 +74,6 @@
         if (tracking) {
             stopTracking();
         } else {
-            startedByUser = true;
             startTracking();
         }
     }
@@ -70,30 +90,14 @@
         error = false;
         firstFix = true;
 
-        // Start device orientation (compass) — only request permission if triggered by user gesture
-        if (startedByUser) {
-            startDeviceOrientation();
-            startedByUser = false;
-        }
 
         const watchId = navigator.geolocation.watchPosition(
             (pos) => {
                 const pt = new Point({longitude: pos.coords.longitude, latitude: pos.coords.latitude});
-                let heading = pos.coords.heading;
-
-                // Priorità: giroscopio > GPS heading > calcolo da posizione
-                if (deviceHeading != null) {
-                    heading = deviceHeading;
-                } else if (heading == null || isNaN(heading)) {
-                    heading = computeHeading(pt);
-                } else {
-                    lastHeading = heading;
-                }
                 lastPosition = pt;
 
-                addLocationGraphic(pt, heading ?? lastHeading);
+                addLocationGraphic(pt, deviceHeading);
                 if (firstFix) {
-                    // Su mobile sposta il centro visivo più in alto per non finire sotto la sidenav
                     if (window.innerWidth <= 540) {
                         view.padding = {bottom: Math.round(view.height * 0.4)};
                     }
@@ -122,7 +126,6 @@
             mapState.watchId = null;
         }
         mapState.tracking = false;
-        lastHeading = null;
         lastPosition = null;
         deviceHeading = null;
         stopDeviceOrientation();
@@ -130,28 +133,6 @@
         if (layer) layer.removeAll();
     }
 
-    /** Avvia l'ascolto della bussola tramite DeviceOrientationEvent (mobile) */
-    function startDeviceOrientation() {
-        if (orientationListener) return;
-
-        const handler = createOrientationHandler();
-
-        // iOS 13+ richiede permesso esplicito (DEVE essere in un user gesture callstack)
-        if (typeof DeviceOrientationEvent !== 'undefined' &&
-            typeof DeviceOrientationEvent.requestPermission === 'function') {
-            DeviceOrientationEvent.requestPermission().then((state) => {
-                if (state === 'granted') {
-                    localStorage.setItem('cai-orientation-granted', '1');
-                    window.addEventListener('deviceorientation', handler, true);
-                    orientationListener = handler;
-                }
-            }).catch(() => {
-            });
-        } else if (typeof DeviceOrientationEvent !== 'undefined') {
-            window.addEventListener('deviceorientation', handler, true);
-            orientationListener = handler;
-        }
-    }
 
     function createOrientationHandler() {
         return (e) => {
@@ -175,22 +156,6 @@
             window.removeEventListener('deviceorientation', orientationListener, true);
             orientationListener = null;
         }
-    }
-
-    /**
-     * Calcola heading dalla posizione precedente (bearing in gradi).
-     * Utile su desktop dove pos.coords.heading è spesso null.
-     */
-    function computeHeading(currentPt) {
-        if (!lastPosition) return null;
-        const dLon = (currentPt.longitude - lastPosition.longitude);
-        const dLat = (currentPt.latitude - lastPosition.latitude);
-        // Ignora spostamenti troppo piccoli (rumore GPS)
-        if (Math.abs(dLon) < 0.00001 && Math.abs(dLat) < 0.00001) return lastHeading;
-        const rad = Math.atan2(dLon, dLat);
-        const deg = (rad * 180 / Math.PI + 360) % 360;
-        lastHeading = deg;
-        return deg;
     }
 
     function addLocationGraphic(point, heading) {
@@ -276,38 +241,21 @@
     }
 </script>
 
-{#if showPrompt}
-    <div class="cai-locate-prompt">
-        <button class="cai-locate-prompt-btn" onclick={acceptTracking} aria-label={t.locate.label}>
-            <LocateFixed size={16} strokeWidth={2}/>
-        </button>
-    </div>
-{:else if enabled}
-    <button
-            aria-label={tracking ? t.locate.stopLabel : t.locate.label}
-            class="cai-locate-btn"
-            class:active={tracking}
-            class:error
-            disabled={locating}
-            onclick={toggleTracking}
-            title={error ? t.locate.errorTitle : (tracking ? t.locate.stopTitle : t.locate.title)}
-    >
-        {#if locating}
-            <Loader size={16} strokeWidth={2} class="cai-spinning"/>
-        {:else if tracking}
-            <LocateOff size={16} strokeWidth={2}/>
-        {:else}
-            <LocateFixed size={16} strokeWidth={2}/>
-        {/if}
-    </button>
-{:else}
-    <button
-            aria-label={t.locate.label}
-            class="cai-locate-btn"
-            onclick={() => { enabled = true; localStorage.setItem('cai-tracking-granted', '1'); startedByUser = true; startTracking(); }}
-            title={t.locate.title}
-    >
+<button
+        aria-label={tracking ? t.locate.stopLabel : t.locate.label}
+        class="cai-locate-btn"
+        class:active={tracking}
+        class:error
+        disabled={locating}
+        onclick={toggleTracking}
+        title={error ? t.locate.errorTitle : (tracking ? t.locate.stopTitle : t.locate.title)}
+>
+    {#if locating}
+        <Loader size={16} strokeWidth={2} class="cai-spinning"/>
+    {:else if tracking}
+        <LocateOff size={16} strokeWidth={2}/>
+    {:else}
         <LocateFixed size={16} strokeWidth={2}/>
-    </button>
-{/if}
+    {/if}
+</button>
 

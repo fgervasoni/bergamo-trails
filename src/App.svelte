@@ -33,6 +33,10 @@
     let authMode = $state('login'); // 'login' | 'register'
     let authSuccess = $state('');
 
+    // Gyroscope permission popup
+    let showGyroPrompt = $state(false);
+    let locateButtonRef = $state(null);
+
     onMount(() => {
         initTheme();
         initAuth();
@@ -40,6 +44,8 @@
 
     function onMapReady() {
         loading = false;
+        // Mostra il popup giroscopio su iOS se non già rifiutato in questa sessione
+        checkGyroPermission();
         // Hide the HTML splash
         const splash = document.getElementById('splash-loading');
         if (splash) {
@@ -98,6 +104,35 @@
     async function handleLogout() {
         await logout();
     }
+
+    function checkGyroPermission() {
+        // Solo su iOS (dove esiste requestPermission) e solo su mobile
+        if (typeof DeviceOrientationEvent !== 'undefined' &&
+            typeof DeviceOrientationEvent.requestPermission === 'function' &&
+            window.innerWidth <= 540) {
+            // Mostra il popup dopo un breve delay per non sovrapporre alla splash
+            setTimeout(() => {
+                showGyroPrompt = true;
+            }, 800);
+        }
+    }
+
+    function acceptGyro() {
+        showGyroPrompt = false;
+        // Deve essere chiamato nel callstack del gesto utente
+        DeviceOrientationEvent.requestPermission().then((state) => {
+            if (state === 'granted') {
+                // Notifica il LocateButton che può ascoltare l'orientamento
+                if (locateButtonRef?.startOrientationAfterPermission) {
+                    locateButtonRef.startOrientationAfterPermission();
+                }
+            }
+        }).catch(() => {});
+    }
+
+    function declineGyro() {
+        showGyroPrompt = false;
+    }
 </script>
 
 
@@ -127,7 +162,7 @@
                     <div class="cai-search-flex">
                         <SearchBar/>
                     </div>
-                    <LocateButton/>
+                    <LocateButton bind:this={locateButtonRef}/>
                 </div>
             </section>
 
@@ -294,5 +329,18 @@
     {/if}
 
     <CustomPopup/>
+
+    {#if showGyroPrompt}
+        <div class="cai-gyro-overlay">
+            <div class="cai-gyro-modal">
+                <h3>{t.gyro.title}</h3>
+                <p>{t.gyro.message}</p>
+                <div class="cai-gyro-actions">
+                    <button class="cai-gyro-btn decline" onclick={declineGyro}>{t.gyro.decline}</button>
+                    <button class="cai-gyro-btn accept" onclick={acceptGyro}>{t.gyro.accept}</button>
+                </div>
+            </div>
+        </div>
+    {/if}
 </div>
 

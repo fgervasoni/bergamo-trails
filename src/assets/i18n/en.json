@@ -106,6 +106,12 @@
   "footer": {
     "madeBy": "Made by"
   },
+  "gyro": {
+    "title": "Compass",
+    "message": "Would you like to enable the compass to show the direction you're facing?",
+    "accept": "Enable",
+    "decline": "No, thanks"
+  },
   "addFeature": {
     "title": "Add",
     "rifugio": "New Shelter",

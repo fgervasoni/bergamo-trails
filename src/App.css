@@ -510,6 +510,79 @@
     background: rgba(192, 57, 43, 0.2);
 }
 
+/* ===== Gyroscope Permission Modal ===== */
+.cai-gyro-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: cai-fadeIn 0.2s ease;
+}
+
+.cai-gyro-modal {
+    background: var(--bg-panel-solid);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 300px;
+    width: calc(100% - 48px);
+    box-shadow: var(--shadow-popup);
+    text-align: center;
+}
+
+.cai-gyro-modal h3 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+}
+
+.cai-gyro-modal p {
+    margin: 0 0 20px;
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.cai-gyro-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.cai-gyro-btn {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cai-gyro-btn.decline {
+    background: var(--bg-hover);
+    color: var(--text-muted);
+}
+
+.cai-gyro-btn.decline:hover {
+    background: var(--bg-hover-light);
+}
+
+.cai-gyro-btn.accept {
+    background: var(--accent, #2d6a4f);
+    color: white;
+}
+
+.cai-gyro-btn.accept:hover {
+    background: #1a472a;
+}
+
 /* ===== Mobile ===== */
 .cai-add-mobile {
     display: none;
