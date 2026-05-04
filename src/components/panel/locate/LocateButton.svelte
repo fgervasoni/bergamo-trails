@@ -264,7 +264,7 @@
                                                     {
                                                         type: 'CIMSolidFill',
                                                         enable: true,
-                                                        color: [66, 133, 244, 50]
+                                                        color: [66, 133, 244, 70]
                                                     }
                                                 ]
                                             }
