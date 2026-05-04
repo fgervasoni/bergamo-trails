@@ -26,17 +26,9 @@
     onMount(() => {
         const granted = localStorage.getItem('cai-tracking-granted');
         if (granted) {
-            // L'utente ha già accettato in una sessione precedente
+            // L'utente ha già accettato in precedenza, abilita il pulsante ma non avviare automaticamente
+            // Così dovrà premere il pulsante e iOS chiederà il permesso giroscopio ogni sessione
             enabled = true;
-            const waitForView = () => {
-                if (mapState.view) {
-                    startDeviceOrientationSilent();
-                    startTracking();
-                } else {
-                    setTimeout(waitForView, 100);
-                }
-            };
-            waitForView();
         } else {
             // Mostra il prompt al primo accesso
             showPrompt = true;
@@ -159,24 +151,6 @@
             window.addEventListener('deviceorientation', handler, true);
             orientationListener = handler;
         }
-    }
-
-    /**
-     * Avvia il giroscopio senza richiedere il permesso (per accessi successivi).
-     * Su iOS il permesso è per-sessione e richiede sempre un gesto utente,
-     * quindi su iOS non lo avviamo in automatico.
-     */
-    function startDeviceOrientationSilent() {
-        if (orientationListener) return;
-        if (typeof DeviceOrientationEvent === 'undefined') return;
-
-        // Su iOS, requestPermission è obbligatorio ogni sessione — skip su auto-start
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') return;
-
-        // Android e altri browser: basta aggiungere il listener
-        const handler = createOrientationHandler();
-        window.addEventListener('deviceorientation', handler, true);
-        orientationListener = handler;
     }
 
     function createOrientationHandler() {
