@@ -45,7 +45,10 @@
             center: [9.67, 45.7],
             zoom: 10,
             popupEnabled: false,
-            padding: window.innerWidth <= 540 ? {bottom: 200} : {right: 0}
+            padding: window.innerWidth <= 540 ? {bottom: 200} : {right: 0},
+            constraints: {
+                rotationEnabled: false
+            }
         });
 
         view.ui.components = [];

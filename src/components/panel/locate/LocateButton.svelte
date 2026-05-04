@@ -23,11 +23,15 @@
     let startedByUser = false; // true se il tracking è stato avviato da un click
 
     onMount(async () => {
+        // Al primo accesso non avviare il tracciamento automatico,
+        // così al tap manuale verrà richiesto anche il permesso giroscopio
+        const hasTrackedBefore = localStorage.getItem('cai-tracking-granted');
+        if (!hasTrackedBefore) return;
+
         if (navigator.permissions) {
             try {
                 const status = await navigator.permissions.query({name: 'geolocation'});
                 if (status.state === 'granted') {
-                    // Aspetta che la view sia pronta
                     const waitForView = () => {
                         if (mapState.view) {
                             startTracking();
@@ -97,6 +101,8 @@
                 }
                 locating = false;
                 mapState.tracking = true;
+                // Salva che il tracciamento è stato concesso per auto-start futuri
+                localStorage.setItem('cai-tracking-granted', '1');
             },
             () => {
                 error = true;
