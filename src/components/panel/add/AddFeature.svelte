@@ -76,7 +76,7 @@
     }
 
     function clearAllPreviews() {
-        const layer = mapState.locationLayer;
+        const layer = mapState.previewLayer;
         if (layer && previewGraphic) {
             layer.remove(previewGraphic);
             previewGraphic = null;
@@ -106,7 +106,7 @@
     }
 
     function showPointPreview(longitude, latitude) {
-        const layer = mapState.locationLayer;
+        const layer = mapState.previewLayer;
         if (layer && previewGraphic) layer.remove(previewGraphic);
         previewGraphic = new Graphic({
             geometry: new Point({longitude, latitude}),
@@ -190,7 +190,7 @@
     }
 
     function updateTrailPreview() {
-        const layer = mapState.locationLayer;
+        const layer = mapState.previewLayer;
         if (!layer) return;
 
         // Remove old previews

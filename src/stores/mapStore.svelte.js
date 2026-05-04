@@ -1,5 +1,5 @@
 /** @type {{ view: import('@arcgis/core/views/MapView').default | null, sentieriLayer: any, rifugiLayer: any, locationLayer: any, tracking: boolean, watchId: number|null }} */
-export const mapState = $state({ view: null, sentieriLayer: null, rifugiLayer: null, vetteLayer: null, locationLayer: null, tracking: false, watchId: null });
+export const mapState = $state({ view: null, sentieriLayer: null, rifugiLayer: null, vetteLayer: null, locationLayer: null, previewLayer: null, tracking: false, watchId: null });
 
 /** Callback per il refresh dei layer — impostato da MapContainer */
 let _refreshLayerFn = null;

@@ -7,7 +7,7 @@
     import Legend from './components/panel/legend/Legend.svelte';
     import AddFeature from './components/panel/add/AddFeature.svelte';
     import CustomPopup from './components/popup/CustomPopup.svelte';
-    import {Loader, LogIn, LogOut, Monitor, Moon, Mountain, MountainSnow, Settings, Sun, X} from 'lucide-svelte';
+    import {Loader, LogIn, LogOut, MapPinPlus, Monitor, Moon, Mountain, MountainSnow, Plus, Settings, Sun, X} from 'lucide-svelte';
     import {availableLocales, getT, i18n, setLocale} from './assets/i18n/i18n.svelte.js';
     import {uiState} from './stores/mapStore.svelte.js';
     import {initTheme, setTheme, themeState} from './stores/themeStore.svelte.js';
@@ -16,6 +16,14 @@
 
     let t = $derived(getT());
     let loading = $state(true);
+    let mobileAddOpen = $state(false);
+
+    function toggleMobileAdd() {
+        mobileAddOpen = !mobileAddOpen;
+        if (mobileAddOpen && uiState.panelOpen) {
+            uiState.panelOpen = false;
+        }
+    }
 
     // Auth form state
     let authEmail = $state('');
@@ -124,7 +132,7 @@
             </section>
 
 
-            <section class="cai-section">
+            <section class="cai-section cai-section-add-desktop">
                 <AddFeature/>
             </section>
 
@@ -260,10 +268,29 @@
     </aside>
 
     {#if !uiState.panelOpen}
-        <button class="cai-open-pill" onclick={() => uiState.panelOpen = true} aria-label={t.panel.open}>
+        <button class="cai-open-pill" onclick={() => { uiState.panelOpen = true; mobileAddOpen = false; }} aria-label={t.panel.open}>
             <Mountain size={18} strokeWidth={2}/>
             <span>{t.panel.brand}</span>
         </button>
+    {/if}
+
+    <!-- AddFeature mobile: FAB + dropdown -->
+    {#if authState.user}
+        <div class="cai-add-mobile">
+            <button class="cai-add-fab" class:active={mobileAddOpen} onclick={toggleMobileAdd} aria-label={t.addFeature.title}>
+                {#if mobileAddOpen}
+                    <X size={18} strokeWidth={2.5}/>
+                {:else}
+                    <MapPinPlus size={18} strokeWidth={2}/>
+                {/if}
+                <span>{t.addFeature.title}</span>
+            </button>
+            {#if mobileAddOpen}
+                <div class="cai-add-mobile-dropdown">
+                    <AddFeature/>
+                </div>
+            {/if}
+        </div>
     {/if}
 
     <CustomPopup/>

@@ -17,6 +17,8 @@
     let firstFix = false;
     let lastHeading = null;
     let lastPosition = null;
+    let deviceHeading = null;
+    let orientationListener = null;
 
     onMount(async () => {
         if (navigator.permissions) {
@@ -60,13 +62,18 @@
         error = false;
         firstFix = true;
 
+        // Start device orientation (compass) on mobile
+        startDeviceOrientation();
+
         const watchId = navigator.geolocation.watchPosition(
             (pos) => {
                 const pt = new Point({longitude: pos.coords.longitude, latitude: pos.coords.latitude});
                 let heading = pos.coords.heading;
 
-                // Se il browser non fornisce heading, calcolalo dalla posizione precedente
-                if (heading == null || isNaN(heading)) {
+                // Priorità: giroscopio > GPS heading > calcolo da posizione
+                if (deviceHeading != null) {
+                    heading = deviceHeading;
+                } else if (heading == null || isNaN(heading)) {
                     heading = computeHeading(pt);
                 } else {
                     lastHeading = heading;
@@ -106,8 +113,55 @@
         mapState.tracking = false;
         lastHeading = null;
         lastPosition = null;
+        deviceHeading = null;
+        stopDeviceOrientation();
         const layer = mapState.locationLayer;
         if (layer) layer.removeAll();
+    }
+
+    /** Avvia l'ascolto della bussola tramite DeviceOrientationEvent (mobile) */
+    function startDeviceOrientation() {
+        if (orientationListener) return;
+
+        const handler = (e) => {
+            // webkitCompassHeading (iOS) o alpha (Android)
+            let heading = null;
+            if (e.webkitCompassHeading != null) {
+                heading = e.webkitCompassHeading;
+            } else if (e.alpha != null && e.absolute) {
+                heading = (360 - e.alpha) % 360;
+            } else if (e.alpha != null) {
+                heading = (360 - e.alpha) % 360;
+            }
+            if (heading != null && !isNaN(heading)) {
+                deviceHeading = heading;
+                // Aggiorna il cono in tempo reale se abbiamo una posizione
+                if (lastPosition && mapState.tracking) {
+                    addLocationGraphic(lastPosition, heading);
+                }
+            }
+        };
+
+        // iOS 13+ richiede permesso esplicito
+        if (typeof DeviceOrientationEvent !== 'undefined' &&
+            typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission().then((state) => {
+                if (state === 'granted') {
+                    window.addEventListener('deviceorientation', handler, true);
+                    orientationListener = handler;
+                }
+            }).catch(() => {});
+        } else if (typeof DeviceOrientationEvent !== 'undefined') {
+            window.addEventListener('deviceorientation', handler, true);
+            orientationListener = handler;
+        }
+    }
+
+    function stopDeviceOrientation() {
+        if (orientationListener) {
+            window.removeEventListener('deviceorientation', orientationListener, true);
+            orientationListener = null;
+        }
     }
 
     /**

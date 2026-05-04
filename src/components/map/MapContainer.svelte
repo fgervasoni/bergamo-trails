@@ -124,6 +124,9 @@
         const locationLayer = new GraphicsLayer({title: 'Posizione'});
         map.add(locationLayer);
 
+        const previewLayer = new GraphicsLayer({title: 'Preview'});
+        map.add(previewLayer);
+
         await view.when();
         if (sentieriLayer) await sentieriLayer.when();
 
@@ -161,6 +164,7 @@
         mapState.rifugiLayer = rifugiLayer;
         mapState.vetteLayer = vetteLayer;
         mapState.locationLayer = locationLayer;
+        mapState.previewLayer = previewLayer;
 
         // ── Refresh layer callback ───────────────────────────────
         setRefreshLayerFn(async (layerTitle) => {
