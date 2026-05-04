@@ -19,6 +19,8 @@
     let lastPosition = null;
     let deviceHeading = null;
     let orientationListener = null;
+    let orientationRequested = false; // true se il permesso è stato già richiesto da un gesto utente
+    let startedByUser = false; // true se il tracking è stato avviato da un click
 
     onMount(async () => {
         if (navigator.permissions) {
@@ -46,6 +48,7 @@
         if (tracking) {
             stopTracking();
         } else {
+            startedByUser = true;
             startTracking();
         }
     }
@@ -62,8 +65,11 @@
         error = false;
         firstFix = true;
 
-        // Start device orientation (compass) on mobile
-        startDeviceOrientation();
+        // Start device orientation (compass) — only request permission if triggered by user gesture
+        if (startedByUser) {
+            startDeviceOrientation();
+            startedByUser = false;
+        }
 
         const watchId = navigator.geolocation.watchPosition(
             (pos) => {
@@ -121,16 +127,18 @@
 
     /** Avvia l'ascolto della bussola tramite DeviceOrientationEvent (mobile) */
     function startDeviceOrientation() {
-        if (orientationListener) return;
+        if (orientationListener || orientationRequested) return;
+        orientationRequested = true;
 
         const handler = (e) => {
             // webkitCompassHeading (iOS) o alpha (Android)
             let heading = null;
             if (e.webkitCompassHeading != null) {
+                // iOS: webkitCompassHeading è già il bearing magnetico in gradi (0 = nord)
                 heading = e.webkitCompassHeading;
-            } else if (e.alpha != null && e.absolute) {
-                heading = (360 - e.alpha) % 360;
             } else if (e.alpha != null) {
+                // Android: alpha è la rotazione attorno all'asse Z
+                // absolute=true significa che è relativo al nord magnetico
                 heading = (360 - e.alpha) % 360;
             }
             if (heading != null && !isNaN(heading)) {
@@ -142,7 +150,7 @@
             }
         };
 
-        // iOS 13+ richiede permesso esplicito
+        // iOS 13+ richiede permesso esplicito (DEVE essere in un user gesture callstack)
         if (typeof DeviceOrientationEvent !== 'undefined' &&
             typeof DeviceOrientationEvent.requestPermission === 'function') {
             DeviceOrientationEvent.requestPermission().then((state) => {
@@ -150,8 +158,11 @@
                     window.addEventListener('deviceorientation', handler, true);
                     orientationListener = handler;
                 }
-            }).catch(() => {});
+            }).catch(() => {
+                orientationRequested = false;
+            });
         } else if (typeof DeviceOrientationEvent !== 'undefined') {
+            // Android e browser che non richiedono permesso
             window.addEventListener('deviceorientation', handler, true);
             orientationListener = handler;
         }
@@ -162,6 +173,7 @@
             window.removeEventListener('deviceorientation', orientationListener, true);
             orientationListener = null;
         }
+        orientationRequested = false;
     }
 
     /**
