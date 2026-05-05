@@ -2,15 +2,15 @@
 
 .cai-navigate-floating {
     position: fixed;
-    top: 12px;
-    right: 12px;
+    top: 16px;
+    left: 16px;
     z-index: 60;
-    width: 320px;
+    width: 380px;
     background: var(--bg-panel);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border-radius: 12px;
-    box-shadow: var(--shadow-pill);
+    border-radius: 14px;
+    box-shadow: var(--shadow-panel);
     transition: box-shadow 0.25s ease;
 }
 
@@ -26,16 +26,16 @@
 .cai-navigate-input-wrap {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 42px 0 12px;
-    height: 42px;
+    gap: 10px;
+    padding: 0 48px 0 14px;
+    height: 48px;
 }
 
 /* LocateButton wrapper - positioned inside the search bar */
 .cai-navigate-locate-wrap {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: 7px;
+    right: 7px;
     z-index: 2;
 }
 
@@ -47,7 +47,7 @@
     flex: 1;
     border: none;
     background: none;
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     font-family: inherit;
     color: var(--text-heading);
     outline: none;
@@ -289,6 +289,20 @@
         max-height: calc(100vh - 24px);
         overflow-y: auto;
         z-index: 70;
+    }
+
+    .cai-navigate-input-wrap {
+        height: 42px;
+        padding: 0 42px 0 12px;
+    }
+
+    .cai-navigate-input {
+        font-size: 0.82rem;
+    }
+
+    .cai-navigate-locate-wrap {
+        top: 4px;
+        right: 4px;
     }
 
     .cai-navigate-trails-wrap {

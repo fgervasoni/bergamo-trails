@@ -9,6 +9,14 @@ export const authState = $state({
 });
 
 /**
+ * Verifica se l'utente corrente è admin.
+ * Il ruolo viene letto da app_metadata impostato lato Supabase.
+ */
+export function isAdmin() {
+    return authState.user?.app_metadata?.role === 'admin';
+}
+
+/**
  * Inizializza l'auth: legge la sessione corrente e ascolta i cambiamenti.
  * Chiamare una volta sola in onMount dell'app.
  */

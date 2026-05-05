@@ -131,8 +131,7 @@
 
         trailsLoading = true;
         trails = null;
-        const data = await fetchTrailsToDestination(result.type, result.id);
-        trails = data;
+        trails = await fetchTrailsToDestination(result.type, result.id);
         trailsLoading = false;
     }
 
@@ -255,7 +254,7 @@
     {:else}
         <div class="cai-navigate-search">
             <div class="cai-navigate-input-wrap">
-                <Navigation color="var(--text-muted)" size={14} strokeWidth={2} class="cai-navigate-search-icon"/>
+                <Navigation color="var(--text-muted)" size={16} strokeWidth={2} class="cai-navigate-search-icon"/>
                 <input
                     class="cai-navigate-input"
                     type="text"
@@ -265,6 +264,9 @@
                     onfocus={() => { if (results.length) showResults = true; }}
                     onblur={() => setTimeout(() => showResults = false, 200)}
                 />
+                {#if searching}
+                    <Loader size={16} strokeWidth={2} class="cai-spinning" color="var(--text-muted)"/>
+                {/if}
             </div>
             {#if showResults}
                 <ul class="cai-navigate-results">

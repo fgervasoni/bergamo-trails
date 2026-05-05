@@ -63,6 +63,7 @@
     "delete": "Elimina",
     "deleting": "Eliminazione...",
     "deleteConfirm": "Sei sicuro di voler eliminare?",
+    "deleteReasonPlaceholder": "Motivazione per l'eliminazione...",
     "deleteSuccess": "Eliminato!",
     "deleteError": "Errore nell'eliminazione",
     "coordinates": "Coordinate",
@@ -102,7 +103,8 @@
     "confirmEmail": "Controlla la tua email per confermare l'account",
     "loggedAs": "Connesso come",
     "switchToRegister": "Non hai un account?",
-    "switchToLogin": "Hai già un account?"
+    "switchToLogin": "Hai già un account?",
+    "emailDisclaimer": "L'email è utilizzata esclusivamente per l'invio delle richieste all'admin."
   },
   "footer": {
     "madeBy": "Sviluppato da"
@@ -148,6 +150,30 @@
     "direct": "Accesso diretto",
     "indirect": "Tramite collegamento",
     "distanceHint": "Distanza dal punto di interesse"
+  },
+  "admin": {
+    "title": "Richieste",
+    "loading": "Caricamento...",
+    "noRequests": "Nessuna richiesta in attesa",
+    "tapRefresh": "Premi ↻ per caricare",
+    "approve": "Approva",
+    "reject": "Rifiuta",
+    "actions": {
+      "create": "Crea",
+      "update": "Modifica",
+      "delete": "Elimina"
+    }
+  },
+  "request": {
+    "submitted": "Richiesta inviata! Sarà revisionata dall'admin.",
+    "submitError": "Errore nell'invio della richiesta",
+    "myTitle": "Le mie richieste",
+    "loading": "Caricamento...",
+    "empty": "Nessuna richiesta inviata",
+    "statusPending": "In attesa",
+    "statusApproved": "Approvata",
+    "statusRejected": "Rifiutata",
+    "delete": "Rimuovi"
   }
 }
 

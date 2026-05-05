@@ -1,11 +1,24 @@
 <script>
     import './CustomPopup.css';
-    import {Pencil, Trash2, X, Check, Loader, MapPinPlus, Home, Mountain} from 'lucide-svelte';
-    import {closeCustomPopup, mapState, popupState, refreshLayer} from '../../stores/mapStore.svelte.js';
+    import {Check, Home, Loader, MapPinPlus, Mountain, Pencil, Trash2, X} from 'lucide-svelte';
+    import {
+        closeCustomPopup,
+        mapState,
+        popupState,
+        refreshLayer,
+        triggerRequestsRefresh
+    } from '../../stores/mapStore.svelte.js';
     import {getT} from '../../assets/i18n/i18n.svelte.js';
-    import {updateRifugio, updateVetta, deleteRifugio, deleteVetta, fetchNearbyPois} from '../../services/trailsService.js';
-    import {getModel, castValue, inputTypeFor} from '../../models/schema.js';
-    import {authState} from '../../stores/authStore.svelte.js';
+    import {
+        deleteRifugio,
+        deleteVetta,
+        fetchNearbyPois,
+        updateRifugio,
+        updateVetta
+    } from '../../services/trailsService.js';
+    import {submitRequest} from '../../services/requestsService.js';
+    import {castValue, getModel, inputTypeFor} from '../../models/schema.js';
+    import {authState, isAdmin} from '../../stores/authStore.svelte.js';
     import Graphic from '@arcgis/core/Graphic';
     import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
     import Point from '@arcgis/core/geometry/Point';
@@ -18,8 +31,9 @@
     let saving = $state(false);
     let deleting = $state(false);
     let confirmingDelete = $state(false);
+    let deleteReason = $state('');
     let pickingLocation = $state(false);
-    let saveStatus = $state(''); // '' | 'success' | 'error' | 'deleted' | 'deleteError'
+    let saveStatus = $state(''); // '' | 'success' | 'error' | 'deleted' | 'deleteError' | 'requested'
 
     let cachedTitle = $state('');
     let cachedFields = $state([]);
@@ -50,6 +64,7 @@
             saving = false;
             deleting = false;
             confirmingDelete = false;
+            deleteReason = '';
             saveStatus = '';
             closing = false;
             visible = true;
@@ -74,15 +89,14 @@
 
     async function loadNearbyPois(sentieroId) {
         nearbyLoading = true;
-        const data = await fetchNearbyPois(sentieroId);
-        nearbyPois = data;
+        nearbyPois = await fetchNearbyPois(sentieroId);
         nearbyLoading = false;
     }
 
     function goToPoi(poi) {
         const view = mapState.view;
         if (!view || !poi.longitude || !poi.latitude) return;
-        view.goTo({ center: [poi.longitude, poi.latitude], zoom: 15 }, { duration: 600 });
+        view.goTo({center: [poi.longitude, poi.latitude], zoom: 15}, {duration: 600});
     }
 
     function dismiss() {
@@ -134,19 +148,19 @@
         clickHandler = view.on('click', (event) => {
             event.stopPropagation();
             const pt = event.mapPoint;
-            editCoords = { latitude: pt.latitude, longitude: pt.longitude };
+            editCoords = {latitude: pt.latitude, longitude: pt.longitude};
 
             // Preview marker
             cleanupPreview();
             const layer = mapState.locationLayer;
             if (layer) {
                 previewGraphic = new Graphic({
-                    geometry: new Point({ longitude: pt.longitude, latitude: pt.latitude }),
+                    geometry: new Point({longitude: pt.longitude, latitude: pt.latitude}),
                     symbol: new SimpleMarkerSymbol({
                         style: 'diamond',
                         color: [255, 215, 0, 0.9],
                         size: 14,
-                        outline: { color: '#333', width: 2 }
+                        outline: {color: '#333', width: 2}
                     })
                 });
                 layer.add(previewGraphic);
@@ -197,26 +211,44 @@
         }
 
         try {
-            const updateFn = cachedLayerTitle === 'Vette' ? updateVetta : updateRifugio;
-            const result = await updateFn(cachedFeatureId, updates);
-            if (result) {
-                cachedFields = cachedFields.map(f => ({
-                    ...f,
-                    value: formatDisplayValue(f.key, updates[f.key])
-                }));
-                if (editCoords) {
-                    cachedCoordinates = { ...editCoords };
+            if (isAdmin()) {
+                // Admin: modifica diretta
+                const updateFn = cachedLayerTitle === 'Vette' ? updateVetta : updateRifugio;
+                const result = await updateFn(cachedFeatureId, updates);
+                if (result) {
+                    cachedFields = cachedFields.map(f => ({
+                        ...f,
+                        value: formatDisplayValue(f.key, updates[f.key])
+                    }));
+                    if (editCoords) {
+                        cachedCoordinates = {...editCoords};
+                    }
+                    cleanupPreview();
+                    saveStatus = 'success';
+                    await refreshLayer(cachedLayerTitle);
+                    setTimeout(() => {
+                        editing = false;
+                        saveStatus = '';
+                    }, 1200);
+                } else {
+                    saveStatus = 'error';
                 }
-                cleanupPreview();
-                saveStatus = 'success';
-                // Refresh layer sulla mappa
-                await refreshLayer(cachedLayerTitle);
-                setTimeout(() => {
-                    editing = false;
-                    saveStatus = '';
-                }, 1200);
             } else {
-                saveStatus = 'error';
+                // Utente normale: invia richiesta
+                const result = await submitRequest(
+                    'update', cachedLayerTitle, updates, cachedFeatureId, authState.user?.email
+                );
+                if (result.success) {
+                    cleanupPreview();
+                    saveStatus = 'requested';
+                    triggerRequestsRefresh();
+                    setTimeout(() => {
+                        editing = false;
+                        saveStatus = '';
+                    }, 2000);
+                } else {
+                    saveStatus = 'error';
+                }
             }
         } catch {
             saveStatus = 'error';
@@ -231,19 +263,38 @@
             confirmingDelete = true;
             return;
         }
+        // Non-admin: richiede motivazione
+        if (!isAdmin() && !deleteReason.trim()) return;
+
         deleting = true;
         saveStatus = '';
 
         try {
-            const deleteFn = cachedLayerTitle === 'Vette' ? deleteVetta : deleteRifugio;
-            const success = await deleteFn(cachedFeatureId);
-            if (success) {
-                saveStatus = 'deleted';
-                await refreshLayer(cachedLayerTitle);
-                setTimeout(() => dismiss(), 1200);
+            if (isAdmin()) {
+                // Admin: elimina direttamente
+                const deleteFn = cachedLayerTitle === 'Vette' ? deleteVetta : deleteRifugio;
+                const success = await deleteFn(cachedFeatureId);
+                if (success) {
+                    saveStatus = 'deleted';
+                    await refreshLayer(cachedLayerTitle);
+                    setTimeout(() => dismiss(), 1200);
+                } else {
+                    saveStatus = 'deleteError';
+                    confirmingDelete = false;
+                }
             } else {
-                saveStatus = 'deleteError';
-                confirmingDelete = false;
+                // Utente normale: invia richiesta di eliminazione con motivazione
+                const result = await submitRequest(
+                    'delete', cachedLayerTitle, {reason: deleteReason.trim()}, cachedFeatureId, authState.user?.email
+                );
+                if (result.success) {
+                    saveStatus = 'requested';
+                    triggerRequestsRefresh();
+                    setTimeout(() => dismiss(), 2000);
+                } else {
+                    saveStatus = 'deleteError';
+                    confirmingDelete = false;
+                }
             }
         } catch {
             saveStatus = 'deleteError';
@@ -269,7 +320,8 @@
                     <button class="cai-popup-edit" onclick={startEdit} aria-label={t.popup.edit} title={t.popup.edit}>
                         <Pencil size={13} strokeWidth={2}/>
                     </button>
-                    <button class="cai-popup-delete-btn" onclick={handleDelete} aria-label={t.popup.delete} title={t.popup.delete}>
+                    <button class="cai-popup-delete-btn" onclick={handleDelete} aria-label={t.popup.delete}
+                            title={t.popup.delete}>
                         <Trash2 size={13} strokeWidth={2}/>
                     </button>
                 {/if}
@@ -282,16 +334,29 @@
             {#if confirmingDelete && !editing}
                 <div class="cai-popup-confirm-delete">
                     <span class="cai-popup-confirm-text">{t.popup.deleteConfirm}</span>
+                    {#if !isAdmin()}
+                        <textarea
+                                class="cai-popup-delete-reason"
+                                placeholder={t.popup.deleteReasonPlaceholder}
+                                bind:value={deleteReason}
+                                disabled={deleting}
+                                rows="2"
+                        ></textarea>
+                    {/if}
                     <div class="cai-popup-edit-actions">
                         {#if saveStatus === 'deleted'}
                             <span class="cai-popup-save-status success">{t.popup.deleteSuccess}</span>
+                        {:else if saveStatus === 'requested'}
+                            <span class="cai-popup-save-status success">{t.request.submitted}</span>
                         {:else if saveStatus === 'deleteError'}
                             <span class="cai-popup-save-status error">{t.popup.deleteError}</span>
                         {/if}
-                        <button class="cai-popup-btn cancel" onclick={() => confirmingDelete = false} disabled={deleting}>
+                        <button class="cai-popup-btn cancel"
+                                onclick={() => { confirmingDelete = false; deleteReason = ''; }} disabled={deleting}>
                             {t.popup.cancel}
                         </button>
-                        <button class="cai-popup-btn delete" onclick={handleDelete} disabled={deleting}>
+                        <button class="cai-popup-btn delete" onclick={handleDelete}
+                                disabled={deleting || (!isAdmin() && !deleteReason.trim())}>
                             {#if deleting}
                                 <Loader size={14} strokeWidth={2} class="cai-spinning"/>
                                 {t.popup.deleting}
@@ -310,12 +375,12 @@
                     <div class="cai-popup-field cai-popup-field-edit">
                         <label class="cai-popup-field-label" for="edit-{field.key}">{field.label}</label>
                         <input
-                            id="edit-{field.key}"
-                            class="cai-popup-input"
-                            type={def ? inputTypeFor(def) : 'text'}
-                            bind:value={editValues[field.key]}
-                            placeholder="—"
-                            disabled={saving}
+                                id="edit-{field.key}"
+                                class="cai-popup-input"
+                                type={def ? inputTypeFor(def) : 'text'}
+                                bind:value={editValues[field.key]}
+                                placeholder="—"
+                                disabled={saving}
                         />
                     </div>
                 {/each}
@@ -331,11 +396,11 @@
                             {/if}
                         </span>
                         <button
-                            class="cai-popup-pick-btn"
-                            class:active={pickingLocation}
-                            onclick={startPicking}
-                            disabled={saving}
-                            type="button"
+                                class="cai-popup-pick-btn"
+                                class:active={pickingLocation}
+                                onclick={startPicking}
+                                disabled={saving}
+                                type="button"
                         >
                             <MapPinPlus size={14} strokeWidth={2}/>
                             {editCoords ? t.popup.changePosition : t.popup.pickPosition}
@@ -345,6 +410,8 @@
                 <div class="cai-popup-edit-actions">
                     {#if saveStatus === 'success'}
                         <span class="cai-popup-save-status success">{t.popup.saveSuccess}</span>
+                    {:else if saveStatus === 'requested'}
+                        <span class="cai-popup-save-status success">{t.request.submitted}</span>
                     {:else if saveStatus === 'error'}
                         <span class="cai-popup-save-status error">{t.popup.saveError}</span>
                     {/if}

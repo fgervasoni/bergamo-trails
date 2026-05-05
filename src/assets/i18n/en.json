@@ -63,6 +63,7 @@
     "delete": "Delete",
     "deleting": "Deleting...",
     "deleteConfirm": "Are you sure you want to delete?",
+    "deleteReasonPlaceholder": "Reason for deletion...",
     "deleteSuccess": "Deleted!",
     "deleteError": "Error deleting",
     "coordinates": "Coordinates",
@@ -102,7 +103,8 @@
     "confirmEmail": "Check your email to confirm your account",
     "loggedAs": "Logged in as",
     "switchToRegister": "Don't have an account?",
-    "switchToLogin": "Already have an account?"
+    "switchToLogin": "Already have an account?",
+    "emailDisclaimer": "Your email is used solely to submit requests to the admin."
   },
   "footer": {
     "madeBy": "Made by"
@@ -148,6 +150,30 @@
     "direct": "Direct access",
     "indirect": "Via connecting trails",
     "distanceHint": "Distance from point of interest"
+  },
+  "admin": {
+    "title": "Requests",
+    "loading": "Loading...",
+    "noRequests": "No pending requests",
+    "tapRefresh": "Tap ↻ to load",
+    "approve": "Approve",
+    "reject": "Reject",
+    "actions": {
+      "create": "Create",
+      "update": "Edit",
+      "delete": "Delete"
+    }
+  },
+  "request": {
+    "submitted": "Request submitted! It will be reviewed by the admin.",
+    "submitError": "Error submitting request",
+    "myTitle": "My requests",
+    "loading": "Loading...",
+    "empty": "No requests submitted",
+    "statusPending": "Pending",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "delete": "Remove"
   }
 }
 

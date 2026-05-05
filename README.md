@@ -19,9 +19,13 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 - **Punti di interesse nelle vicinanze** — selezionando un sentiero vengono mostrati rifugi e vette vicini con distanza
 - **Aggiunta nuovi punti** (rifugi, vette) da mappa o posizione GPS attuale
 - **Tracciamento nuovi sentieri** con disegno polyline interattivo
+- **Sistema di richieste** — gli utenti non-admin inviano richieste di creazione, modifica ed eliminazione che vengono revisionate dall'admin
+- **Motivazione obbligatoria per eliminazione** — le richieste di eliminazione richiedono una motivazione
+- **Le mie richieste** — pannello per visualizzare lo stato delle proprie richieste con auto-refresh
 - **Geolocalizzazione** con tracciamento continuo e bussola (giroscopio su mobile)
 - **Popup interattivo** con modifica e eliminazione feature (utenti autenticati)
 - **Autenticazione** con login/registrazione integrata
+- **Pannello admin** per approvazione/rifiuto richieste pendenti
 - **Cambio mappa base** (Topografica, Rilievo, Satellite, OpenStreetMap)
 - **Legenda** sempre visibile
 - **Tema chiaro / scuro / sistema** con persistenza
@@ -33,13 +37,75 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 
 ## Tech Stack
 
-| Tecnologia                                                          | Versione | Utilizzo                  |
-|---------------------------------------------------------------------|----------|---------------------------|
-| [Svelte](https://svelte.dev)                                        | 5        | Framework UI (runes mode) |
-| [Vite](https://vitejs.dev)                                          | 6        | Build tool e dev server   |
-| [ArcGIS Maps SDK for JS](https://developers.arcgis.com/javascript/) | 5        | Mappa, layer, geocoding   |
-| [Supabase](https://supabase.com)                                    | 2.x      | Database PostGIS e auth   |
-| [Lucide Svelte](https://lucide.dev)                                 | 1.x      | Icone SVG                 |
+| Tecnologia                                                          | Versione | Utilizzo                        |
+|---------------------------------------------------------------------|----------|---------------------------------|
+| [Svelte](https://svelte.dev)                                        | 5        | Framework UI (runes mode)       |
+| [Vite](https://vitejs.dev)                                          | 6        | Build tool e dev server         |
+| [ArcGIS Maps SDK for JS](https://developers.arcgis.com/javascript/) | 5        | Mappa, layer, geocoding         |
+| [Supabase](https://supabase.com)                                    | 2.x      | Database PostGIS, auth e RLS    |
+| [Lucide Svelte](https://lucide.dev)                                 | 1.x      | Icone SVG                       |
+
+---
+
+## Architettura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend (PWA)                        │
+│  Svelte 5 + Vite + ArcGIS Maps SDK                         │
+├─────────────────────────────────────────────────────────────┤
+│  Components                                                  │
+│  ├── MapContainer        → Mappa Esri, GeoJSON layers       │
+│  ├── CustomPopup         → Lettura/modifica/eliminazione    │
+│  ├── AddFeature          → Creazione feature (punto/linea)  │
+│  ├── Navigate            → Ricerca sentieri verso POI       │
+│  ├── AdminPanel          → Gestione richieste (admin)       │
+│  ├── MyRequests          → Stato richieste (utente)         │
+│  ├── Legend / Basemap    → UI legenda e mappa base          │
+│  └── LocateButton        → GPS + bussola                    │
+├─────────────────────────────────────────────────────────────┤
+│  Services                                                    │
+│  ├── trailsService       → CRUD dirette (admin)             │
+│  └── requestsService     → Submit/fetch/delete richieste    │
+├─────────────────────────────────────────────────────────────┤
+│  Stores ($state)                                             │
+│  ├── mapStore            → Vista, layer, popup, UI signals  │
+│  ├── authStore           → Sessione utente, ruoli           │
+│  └── themeStore          → Tema chiaro/scuro/sistema        │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Supabase (Backend)                       │
+├─────────────────────────────────────────────────────────────┤
+│  Database (PostGIS)                                          │
+│  ├── rifugi          → Punti rifugi con geometria           │
+│  ├── sentieri        → Linee sentieri con difficoltà        │
+│  ├── vette           → Punti vette con quota                │
+│  └── requests        → Richieste modifica da utenti         │
+├─────────────────────────────────────────────────────────────┤
+│  Auth                                                        │
+│  └── Email/password con conferma email                      │
+├─────────────────────────────────────────────────────────────┤
+│  RLS Policies                                                │
+│  ├── Admin: lettura/scrittura completa su tutto             │
+│  ├── Utenti: lettura proprie richieste                      │
+│  ├── Utenti: inserimento richieste                          │
+│  └── Utenti: eliminazione proprie richieste processate      │
+├─────────────────────────────────────────────────────────────┤
+│  Functions (PostGIS)                                         │
+│  ├── get_trails_to_destination → Sentieri vicini a un POI   │
+│  └── get_nearby_pois          → POI vicini a un sentiero    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Flusso Richieste (Utente non-admin)
+
+1. L'utente crea/modifica/elimina una feature → viene inviata una **richiesta** (tabella `requests`)
+2. Per le eliminazioni è richiesta una **motivazione** obbligatoria
+3. L'admin vede le richieste pendenti nel pannello admin
+4. L'admin approva (esegue l'azione) o rifiuta la richiesta
+5. L'utente vede lo stato aggiornato in "Le mie richieste"
 
 ---
 
@@ -47,8 +113,8 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 
 ```
 src/
-├── App.svelte                         # Layout principale (panel, settings)
-├── App.css                            # Stili panel, footer, impostazioni, mobile
+├── App.svelte                         # Layout principale (panel, header con settings)
+├── App.css                            # Stili panel, header, auth, mobile
 ├── global.css                         # CSS custom properties (tema chiaro/scuro), reset
 ├── main.js                            # Entry point
 │
@@ -67,6 +133,12 @@ src/
 │   │   ├── add/
 │   │   │   ├── AddFeature.svelte      # Aggiunta rifugi, vette e sentieri
 │   │   │   └── AddFeature.css
+│   │   ├── admin/
+│   │   │   ├── AdminPanel.svelte      # Pannello admin richieste pendenti
+│   │   │   └── AdminPanel.css
+│   │   ├── requests/
+│   │   │   ├── MyRequests.svelte      # Lista richieste utente con auto-refresh
+│   │   │   └── MyRequests.css
 │   │   ├── navigate/
 │   │   │   ├── Navigate.svelte        # Barra floating "Raggiungi" con ricerca destinazione
 │   │   │   └── Navigate.css
@@ -81,7 +153,7 @@ src/
 │   │       └── Legend.css
 │   │
 │   └── popup/
-│       ├── CustomPopup.svelte         # Card popup glassmorphism con nearby POIs
+│       ├── CustomPopup.svelte         # Card popup con modifica, eliminazione e nearby POIs
 │       └── CustomPopup.css
 │
 ├── lib/
@@ -91,11 +163,12 @@ src/
 │   └── schema.js                      # Schema tabelle (rifugi, sentieri, vette)
 │
 ├── services/
-│   └── trailsService.js               # CRUD Supabase (fetch, insert, update, delete, navigate)
+│   ├── trailsService.js               # CRUD Supabase (fetch, insert, update, delete, navigate)
+│   └── requestsService.js             # Richieste: submit, fetch, approve, reject, delete
 │
 ├── stores/
-│   ├── authStore.svelte.js            # Autenticazione utente
-│   ├── mapStore.svelte.js             # Stato mappa, popup, highlight, UI
+│   ├── authStore.svelte.js            # Autenticazione utente e ruoli
+│   ├── mapStore.svelte.js             # Stato mappa, popup, highlight, UI, segnali refresh
 │   └── themeStore.svelte.js           # Stato tema (light/dark/system)
 │
 └── utils/
@@ -154,6 +227,14 @@ nuovi punti di interesse e nuovi sentieri tracciati direttamente dall'app.
 
 La funzionalità "Raggiungi" utilizza una funzione PostGIS (`get_trails_to_destination`) per calcolare i sentieri
 che passano vicino a un rifugio o vetta, distinguendo tra accesso diretto (< 100m) e tramite collegamento.
+
+---
+
+## Privacy & Disclaimer
+
+> **L'indirizzo email fornito in fase di registrazione è utilizzato esclusivamente per identificare
+> le richieste inviate all'admin** (creazione, modifica, eliminazione di feature).  
+> Non viene condiviso con terze parti né utilizzato per altri scopi.
 
 ---
 

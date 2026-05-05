@@ -272,6 +272,28 @@
     color: var(--text-primary);
 }
 
+.cai-popup-delete-reason {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border-section);
+    border-radius: 6px;
+    background: var(--bg-panel-solid);
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 40px;
+}
+
+.cai-popup-delete-reason::placeholder {
+    color: var(--text-muted);
+}
+
+.cai-popup-delete-reason:focus {
+    outline: none;
+    border-color: var(--accent-color, #2d6a4f);
+}
+
 /* ── Coordinates ─────────────────────────────── */
 
 .cai-popup-coords-section {

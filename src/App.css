@@ -82,7 +82,7 @@
     bottom: 28px;
     right: 12px;
     width: 320px;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - 40px);
     z-index: 50;
     background: var(--bg-panel);
     backdrop-filter: blur(24px);
@@ -127,10 +127,23 @@
     color: white;
 }
 
+.cai-panel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .cai-brand {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.cai-brand-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    object-fit: contain;
 }
 
 .cai-brand h1 {
@@ -194,10 +207,10 @@
     border-top: 1px solid var(--border-settings);
     padding: 10px 14px 12px;
     background: var(--bg-panel);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+}
+
+.cai-panel-footer-right {
+    width: 100%;
 }
 
 .cai-panel-credits {
@@ -232,25 +245,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--border-settings);
-    border-radius: 10px;
-    background: var(--bg-panel-solid);
-    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
 }
 
 .cai-settings-icon-btn:hover {
-    background: var(--bg-hover-light);
-    color: var(--text-heading);
+    background: rgba(255, 255, 255, 0.22);
 }
 
 .cai-settings-dropdown {
     position: absolute;
-    bottom: calc(100% + 8px);
-    left: 0;
+    top: calc(100% + 8px);
+    right: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -260,6 +272,14 @@
     background: var(--bg-panel-solid);
     box-shadow: var(--shadow-dropdown);
     animation: cai-fadeIn 0.15s ease;
+    z-index: 10;
+    min-width: 200px;
+}
+
+.cai-settings-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9;
 }
 
 @keyframes cai-fadeIn {
@@ -367,6 +387,13 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
 }
 
+.cai-open-pill-logo {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
 /* ===== Auth inside settings ===== */
 
 .cai-auth-row {
@@ -383,16 +410,48 @@
     font-size: 0.72rem;
     color: var(--text-muted);
     line-height: 1.4;
-}
-
-.cai-settings-credits-text a {
-    color: var(--accent-text);
     text-decoration: none;
-    font-weight: 500;
 }
 
-.cai-settings-credits-text a:hover {
+.cai-settings-credits-text:hover {
+    color: var(--accent);
     text-decoration: underline;
+}
+
+.cai-settings-credits-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.cai-settings-github-link {
+    display: flex;
+    margin-left: auto;
+    align-items: center;
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+
+.cai-settings-github-link:hover {
+    color: var(--text-heading);
+}
+
+.cai-auth-form-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.cai-auth-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cai-auth-form-actions .cai-auth-login-btn {
+    flex: 1;
 }
 
 .cai-auth-form {
@@ -479,6 +538,14 @@
 
 .cai-auth-switch:hover {
     color: #2d6a4f;
+}
+
+.cai-auth-disclaimer {
+    font-size: 0.62rem;
+    color: var(--text-subtle);
+    line-height: 1.4;
+    text-align: center;
+    opacity: 0.8;
 }
 
 .cai-auth-logged {
@@ -672,7 +739,7 @@
         right: 0;
         width: 100%;
         max-height: 60vh;
-        border-radius: 20px 20px 0 0;
+        border-radius: 0;
     }
 
     .cai-panel.closed {

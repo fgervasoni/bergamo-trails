@@ -1,0 +1,155 @@
+.cai-my-requests {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cai-my-requests-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cai-my-requests-header .cai-section-label {
+    margin-bottom: 0;
+}
+
+.cai-my-requests-refresh {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border-section);
+    border-radius: 5px;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.cai-my-requests-refresh:hover:not(:disabled) {
+    background: var(--bg-hover);
+    color: var(--text-heading);
+}
+
+.cai-my-requests-loading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    padding: 4px 0;
+}
+
+.cai-my-requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.cai-my-request-item {
+    padding: 6px 8px;
+    border: 1px solid var(--border-section);
+    border-radius: 8px;
+    background: var(--bg-panel-solid);
+}
+
+.cai-my-request-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cai-my-request-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.cai-my-request-action.create { background: #2d6a4f; }
+.cai-my-request-action.update { background: #e76f51; }
+.cai-my-request-action.delete { background: #c0392b; }
+
+.cai-my-request-layer {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-heading);
+    flex: 1;
+}
+
+.cai-my-request-status {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.cai-my-request-status.pending {
+    background: rgba(255, 165, 0, 0.15);
+    color: #cc8400;
+}
+
+.cai-my-request-status.approved {
+    background: rgba(45, 106, 79, 0.15);
+    color: #2d6a4f;
+}
+
+.cai-my-request-status.rejected {
+    background: rgba(192, 57, 43, 0.15);
+    color: #c0392b;
+}
+
+.cai-my-request-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 3px;
+}
+
+.cai-my-request-date {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+}
+
+.cai-my-request-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(192, 57, 43, 0.25);
+    border-radius: 4px;
+    background: none;
+    color: #c0392b;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cai-my-request-delete:hover:not(:disabled) {
+    background: rgba(192, 57, 43, 0.15);
+}
+
+.cai-my-request-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cai-my-requests-empty {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 8px 0;
+    margin: 0;
+}
+

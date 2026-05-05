@@ -18,6 +18,13 @@ export async function refreshLayer(layerTitle) {
 
 export const uiState = $state({ panelOpen: true, settingsOpen: false, mobileAddOpen: false });
 
+/** Segnale per triggare il refresh delle richieste utente */
+export const requestsSignal = $state({ tick: 0 });
+
+export function triggerRequestsRefresh() {
+    requestsSignal.tick++;
+}
+
 export const popupState = $state({
     open: false,
     title: '',
@@ -66,4 +73,3 @@ export function closeCustomPopup() {
     popupState.coordinates = null;
     clearHighlight();
 }
-

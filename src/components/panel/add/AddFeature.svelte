@@ -2,10 +2,11 @@
     import './AddFeature.css';
     import {Crosshair, Home, Loader, MapPinPlus, Mountain, Navigation, Plus, Route, SquareCheck, Undo2, X} from 'lucide-svelte';
     import {mapState} from '../../../stores/mapStore.svelte.js';
-    import {refreshLayer} from '../../../stores/mapStore.svelte.js';
-    import {authState} from '../../../stores/authStore.svelte.js';
+    import {refreshLayer, triggerRequestsRefresh} from '../../../stores/mapStore.svelte.js';
+    import {authState, isAdmin} from '../../../stores/authStore.svelte.js';
     import {getT} from '../../../assets/i18n/i18n.svelte.js';
     import {insertRifugio, insertVetta, insertSentiero} from '../../../services/trailsService.js';
+    import {submitRequest} from '../../../services/requestsService.js';
     import {getModel, castValue, DIFFICOLTA_VALUES} from '../../../models/schema.js';
     import Graphic from '@arcgis/core/Graphic';
     import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
@@ -264,21 +265,39 @@
         }
 
         try {
-            let insertFn;
-            if (featureType === 'rifugio') insertFn = insertRifugio;
-            else if (featureType === 'vetta') insertFn = insertVetta;
-            else insertFn = insertSentiero;
+            if (isAdmin()) {
+                // Admin: inserisci direttamente
+                let insertFn;
+                if (featureType === 'rifugio') insertFn = insertRifugio;
+                else if (featureType === 'vetta') insertFn = insertVetta;
+                else insertFn = insertSentiero;
 
-            const result = await insertFn(record);
-            if (result) {
-                saveStatus = 'success';
-                clearAllPreviews();
-                await refreshLayer(currentLayerTitle);
-                setTimeout(() => {
-                    cancelAdd();
-                }, 1500);
+                const result = await insertFn(record);
+                if (result) {
+                    saveStatus = 'success';
+                    clearAllPreviews();
+                    await refreshLayer(currentLayerTitle);
+                    setTimeout(() => {
+                        cancelAdd();
+                    }, 1500);
+                } else {
+                    saveStatus = 'error';
+                }
             } else {
-                saveStatus = 'error';
+                // Utente normale: invia richiesta
+                const result = await submitRequest(
+                    'create', currentLayerTitle, record, null, authState.user?.email
+                );
+                if (result.success) {
+                    saveStatus = 'requested';
+                    clearAllPreviews();
+                    triggerRequestsRefresh();
+                    setTimeout(() => {
+                        cancelAdd();
+                    }, 2500);
+                } else {
+                    saveStatus = 'error';
+                }
             }
         } catch {
             saveStatus = 'error';
@@ -432,6 +451,8 @@
 
                 {#if saveStatus === 'success'}
                     <span class="cai-add-status success">{t.popup.saveSuccess}</span>
+                {:else if saveStatus === 'requested'}
+                    <span class="cai-add-status success">{t.request.submitted}</span>
                 {:else if saveStatus === 'error'}
                     <span class="cai-add-status error">{t.popup.saveError}</span>
                 {/if}
