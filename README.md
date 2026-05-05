@@ -1,6 +1,6 @@
-# Bergamo Trails — Sentieri e Rifugi
+# Bergamo Trails — Sentieri, Rifugi e Vette
 
-Mappa interattiva dei sentieri e rifugi del **Club Alpino Italiano — Sezione di Bergamo**.  
+Mappa interattiva dei sentieri, rifugi e vette del **Club Alpino Italiano — Sezione di Bergamo**.  
 Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 
 ![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte&logoColor=white)
@@ -15,17 +15,18 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 - **Visualizzazione sentieri** con classificazione per difficoltà (T, E, EE, EEA)
 - **Visualizzazione rifugi** con dettagli (nome, quota, proprietà)
 - **Visualizzazione vette** con quota e descrizione
+- **Navigazione verso destinazione** — cerca un rifugio o una vetta e vedi i sentieri che lo raggiungono, divisi tra accesso diretto e tramite collegamento
+- **Punti di interesse nelle vicinanze** — selezionando un sentiero vengono mostrati rifugi e vette vicini con distanza
 - **Aggiunta nuovi punti** (rifugi, vette) da mappa o posizione GPS attuale
 - **Tracciamento nuovi sentieri** con disegno polyline interattivo
-- **Ricerca** per numero sentiero CAI, nome rifugio/vetta o indirizzo
-- **Geolocalizzazione** con tracciamento continuo e indicatore di direzione
+- **Geolocalizzazione** con tracciamento continuo e bussola (giroscopio su mobile)
 - **Popup interattivo** con modifica e eliminazione feature (utenti autenticati)
 - **Autenticazione** con login/registrazione integrata
 - **Cambio mappa base** (Topografica, Rilievo, Satellite, OpenStreetMap)
 - **Legenda** sempre visibile
 - **Tema chiaro / scuro / sistema** con persistenza
 - **Multilingua** (Italiano 🇮🇹 / English 🇬🇧)
-- **Responsive** — pannello laterale su desktop, bottom sheet su mobile
+- **Responsive** — sidebar sempre visibile su desktop, bottom sheet su mobile
 - **Installabile** come PWA con splash screen immediato e supporto offline
 
 ---
@@ -47,7 +48,7 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 ```
 src/
 ├── App.svelte                         # Layout principale (panel, settings)
-├── App.css                            # Stili panel, footer, impostazioni
+├── App.css                            # Stili panel, footer, impostazioni, mobile
 ├── global.css                         # CSS custom properties (tema chiaro/scuro), reset
 ├── main.js                            # Entry point
 │
@@ -66,11 +67,11 @@ src/
 │   │   ├── add/
 │   │   │   ├── AddFeature.svelte      # Aggiunta rifugi, vette e sentieri
 │   │   │   └── AddFeature.css
-│   │   ├── search/
-│   │   │   ├── SearchBar.svelte       # Ricerca sentieri, rifugi, vette, indirizzi
-│   │   │   └── SearchBar.css
+│   │   ├── navigate/
+│   │   │   ├── Navigate.svelte        # Barra floating "Raggiungi" con ricerca destinazione
+│   │   │   └── Navigate.css
 │   │   ├── locate/
-│   │   │   ├── LocateButton.svelte    # Pulsante geolocalizzazione e tracciamento GPS
+│   │   │   ├── LocateButton.svelte    # Geolocalizzazione, tracciamento GPS e bussola
 │   │   │   └── LocateButton.css
 │   │   ├── basemap/
 │   │   │   ├── BasemapSwitcher.svelte # Selezione mappa base
@@ -80,7 +81,7 @@ src/
 │   │       └── Legend.css
 │   │
 │   └── popup/
-│       ├── CustomPopup.svelte         # Card popup glassmorphism
+│       ├── CustomPopup.svelte         # Card popup glassmorphism con nearby POIs
 │       └── CustomPopup.css
 │
 ├── lib/
@@ -90,11 +91,11 @@ src/
 │   └── schema.js                      # Schema tabelle (rifugi, sentieri, vette)
 │
 ├── services/
-│   └── trailsService.js               # CRUD Supabase (fetch, insert, update, delete)
+│   └── trailsService.js               # CRUD Supabase (fetch, insert, update, delete, navigate)
 │
 ├── stores/
 │   ├── authStore.svelte.js            # Autenticazione utente
-│   ├── mapStore.svelte.js             # Stato mappa, popup, highlight
+│   ├── mapStore.svelte.js             # Stato mappa, popup, highlight, UI
 │   └── themeStore.svelte.js           # Stato tema (light/dark/system)
 │
 └── utils/
@@ -148,11 +149,11 @@ I file di output vengono generati nella cartella `dist/`.
 I dati geografici di partenza provengono dal servizio cartografico **Maggioli S.p.A.** per conto di **CAI Bergamo** e
 sono serviti tramite **Supabase (PostGIS)** in formato GeoJSON.
 
-Il dataset originale dei sentieri e rifugi viene progressivamente arricchito dalla community con l'aggiunta di **vette
-**, nuovi punti di interesse e nuovi sentieri tracciati direttamente dall'app.
+Il dataset originale dei sentieri e rifugi viene progressivamente arricchito dalla community con l'aggiunta di **vette**,
+nuovi punti di interesse e nuovi sentieri tracciati direttamente dall'app.
 
-Il geocoding degli indirizzi utilizza
-il [World Geocoding Service](https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer) di Esri.
+La funzionalità "Raggiungi" utilizza una funzione PostGIS (`get_trails_to_destination`) per calcolare i sentieri
+che passano vicino a un rifugio o vetta, distinguendo tra accesso diretto (< 100m) e tramite collegamento.
 
 ---
 

@@ -5,7 +5,7 @@
   },
   "panel": {
     "brand": "Bergamo Trails",
-    "subtitle": "Trails and Shelters",
+    "subtitle": "Trails, Shelters and Peaks",
     "close": "Close panel",
     "open": "Open panel"
   },
@@ -137,6 +137,17 @@
     "shelter": "Shelter",
     "peak": "Peak",
     "meters": "m"
+  },
+  "navigate": {
+    "title": "Navigate",
+    "placeholder": "Search shelter or peak...",
+    "loading": "Searching trails...",
+    "noTrails": "No trails nearby",
+    "trail": "Trail",
+    "clear": "Remove destination",
+    "direct": "Direct access",
+    "indirect": "Via connecting trails",
+    "distanceHint": "Distance from point of interest"
   }
 }
 

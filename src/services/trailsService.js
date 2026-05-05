@@ -200,3 +200,24 @@ export async function fetchNearbyPois(sentieroId, radiusMeters = 500) {
     return data;
 }
 
+/**
+ * Recupera i sentieri che passano vicino a una destinazione (rifugio o vetta).
+ * Chiama la funzione SQL `get_trails_to_destination(dest_type, dest_id, radius_meters)`.
+ * @param {'rifugio'|'vetta'} destType - Tipo di destinazione
+ * @param {number|string} destId - ID della destinazione
+ * @param {number} radiusMeters - Raggio di ricerca in metri (default 1000)
+ * @returns {Promise<Array<{id, numero_cai, difficolta, distanza_m, lunghezza_km}> | null>}
+ */
+export async function fetchTrailsToDestination(destType, destId, radiusMeters = 1000) {
+    const { data, error } = await supabase.rpc('get_trails_to_destination', {
+        dest_type: destType,
+        dest_id: Number(destId),
+        radius_meters: radiusMeters
+    });
+    if (error) {
+        console.error('Errore caricamento sentieri verso destinazione:', error);
+        return null;
+    }
+    return data;
+}
+

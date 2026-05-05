@@ -1,11 +1,11 @@
 <script>
     import './App.css';
     import MapContainer from './components/map/MapContainer.svelte';
-    import SearchBar from './components/panel/search/SearchBar.svelte';
     import LocateButton from './components/panel/locate/LocateButton.svelte';
     import BasemapSwitcher from './components/panel/basemap/BasemapSwitcher.svelte';
     import Legend from './components/panel/legend/Legend.svelte';
     import AddFeature from './components/panel/add/AddFeature.svelte';
+    import Navigate from './components/panel/navigate/Navigate.svelte';
     import CustomPopup from './components/popup/CustomPopup.svelte';
     import {Loader, LogIn, LogOut, MapPinPlus, Monitor, Moon, Mountain, MountainSnow, Plus, Settings, Sun, X} from 'lucide-svelte';
     import {availableLocales, getT, i18n, setLocale} from './assets/i18n/i18n.svelte.js';
@@ -150,21 +150,12 @@
                     <span class="cai-brand-sub">{t.panel.subtitle}</span>
                 </div>
             </div>
-            <button aria-label={t.panel.close} class="cai-toggle-btn" onclick={() => uiState.panelOpen = false}>
+            <button aria-label={t.panel.close} class="cai-toggle-btn cai-mobile-only" onclick={() => uiState.panelOpen = false}>
                 <X size={16} strokeWidth={2}/>
             </button>
         </div>
 
         <div class="cai-panel-body">
-            <section class="cai-section">
-                <span class="cai-section-label">{t.section.search}</span>
-                <div class="cai-search-row">
-                    <div class="cai-search-flex">
-                        <SearchBar/>
-                    </div>
-                    <LocateButton bind:this={locateButtonRef}/>
-                </div>
-            </section>
 
 
             <section class="cai-section cai-section-add-desktop">
@@ -327,6 +318,8 @@
             {/if}
         </div>
     {/if}
+
+    <Navigate bind:locateButtonRef={locateButtonRef}/>
 
     <CustomPopup/>
 

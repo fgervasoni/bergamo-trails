@@ -2,11 +2,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
+    width: 34px;
+    height: 34px;
     border: none;
-    border-radius: 10px;
-    background: var(--bg-input);
+    border-radius: 8px;
+    background: transparent;
     color: var(--text-heading);
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
@@ -21,8 +21,14 @@
     }
 }
 
-.cai-locate-btn:active:not(:disabled) { background: var(--clear-btn-hover); }
-.cai-locate-btn:disabled { cursor: wait; opacity: 0.7; }
+.cai-locate-btn:active:not(:disabled) {
+    background: var(--clear-btn-hover);
+}
+
+.cai-locate-btn:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
 
 .cai-locate-btn.error {
     background: var(--error-bg);
@@ -48,11 +54,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
+    width: 34px;
+    height: 34px;
     border: 2px solid var(--accent);
-    border-radius: 10px;
-    background: var(--bg-input);
+    border-radius: 8px;
+    background: transparent;
     color: var(--accent);
     cursor: pointer;
     transition: background 0.2s, transform 0.2s;
@@ -68,7 +74,11 @@
 }
 
 @keyframes cai-prompt-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.4); }
-    50% { box-shadow: 0 0 0 6px rgba(45, 106, 79, 0); }
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(45, 106, 79, 0);
+    }
 }
 

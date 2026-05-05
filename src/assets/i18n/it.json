@@ -5,7 +5,7 @@
   },
   "panel": {
     "brand": "Bergamo Trails",
-    "subtitle": "Sentieri e Rifugi",
+    "subtitle": "Sentieri, Rifugi e Vette",
     "close": "Chiudi pannello",
     "open": "Apri pannello"
   },
@@ -137,6 +137,17 @@
     "shelter": "Rifugio",
     "peak": "Vetta",
     "meters": "m"
+  },
+  "navigate": {
+    "title": "Raggiungi",
+    "placeholder": "Cerca rifugio o vetta...",
+    "loading": "Ricerca sentieri...",
+    "noTrails": "Nessun sentiero nelle vicinanze",
+    "trail": "Sentiero",
+    "clear": "Rimuovi destinazione",
+    "direct": "Accesso diretto",
+    "indirect": "Tramite collegamento",
+    "distanceHint": "Distanza dal punto di interesse"
   }
 }
 
