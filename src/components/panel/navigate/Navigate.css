@@ -124,11 +124,28 @@
     border-bottom: 1px solid var(--border-section);
 }
 
+.cai-navigate-dest-focus {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.cai-navigate-dest-focus:hover .cai-navigate-dest-name {
+    text-decoration: underline;
+}
+
 .cai-navigate-dest-info {
     display: flex;
     align-items: center;
     gap: 6px;
-    flex: 1;
+    width: 100%;
     min-width: 0;
 }
 
@@ -286,8 +303,7 @@
 
     .cai-navigate-floating.expanded {
         right: 12px;
-        max-height: calc(100vh - 24px);
-        overflow-y: auto;
+        max-height: 200px;
         z-index: 70;
     }
 
@@ -306,6 +322,7 @@
     }
 
     .cai-navigate-trails-wrap {
-        max-height: 45vh;
+        height: 150px;
+        overflow-y: auto;
     }
 }

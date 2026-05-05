@@ -87,6 +87,39 @@
         searchTimeout = setTimeout(() => searchDestinations(query), 300);
     }
 
+    async function focusDestination(destination, moveCamera = true) {
+        const view = mapState.view;
+        const layer = destination.type === 'rifugio' ? mapState.rifugiLayer : mapState.vetteLayer;
+        const layerTitle = destination.type === 'rifugio' ? 'Rifugi' : 'Vette';
+        if (!view || !layer) return;
+
+        try {
+            const q = layer.createQuery();
+            q.where = `id = ${destination.id}`;
+            q.returnGeometry = true;
+            const res = await layer.queryFeatures(q);
+            if (res.features.length === 0) return;
+
+            const feature = res.features[0];
+            if (moveCamera && feature.geometry) {
+                view.goTo({target: feature.geometry, zoom: 14}, {duration: 600});
+            }
+
+            clearHighlight();
+            const lv = await view.whenLayerView(layer);
+            setHighlight(lv.highlight(feature));
+
+            const {title, fields, editable, featureId} = buildPopupData(feature.attributes, layerTitle, t);
+            const geom = feature.geometry;
+            const coordinates = geom?.type === 'point'
+                ? {longitude: geom.longitude, latitude: geom.latitude}
+                : null;
+            openCustomPopup(title, fields, {editable, featureId, layerTitle, coordinates});
+        } catch (_) {
+            // no-op: avoid breaking navigation flow on popup/highlight failures
+        }
+    }
+
     async function selectDestination(result) {
         selectedDestination = {
             id: result.id,
@@ -98,36 +131,7 @@
         results = [];
         showResults = false;
 
-        const view = mapState.view;
-        if (view && result.geometry) {
-            view.goTo({target: result.geometry, zoom: 14}, {duration: 600});
-        }
-
-        // Highlight del rifugio/vetta selezionato e apri popup
-        clearHighlight();
-        const layer = result.type === 'rifugio' ? mapState.rifugiLayer : mapState.vetteLayer;
-        const layerTitle = result.type === 'rifugio' ? 'Rifugi' : 'Vette';
-        if (view && layer) {
-            try {
-                const q = layer.createQuery();
-                q.where = `id = ${result.id}`;
-                q.returnGeometry = true;
-                const res = await layer.queryFeatures(q);
-                if (res.features.length > 0) {
-                    const feature = res.features[0];
-                    const lv = await view.whenLayerView(layer);
-                    setHighlight(lv.highlight(feature));
-
-                    // Apri popup
-                    const {title, fields, editable, featureId} = buildPopupData(feature.attributes, layerTitle, t);
-                    const geom = feature.geometry;
-                    const coordinates = geom?.type === 'point'
-                        ? {longitude: geom.longitude, latitude: geom.latitude}
-                        : null;
-                    openCustomPopup(title, fields, {editable, featureId, layerTitle, coordinates});
-                }
-            } catch (_) {}
-        }
+        await focusDestination(selectedDestination, true);
 
         trailsLoading = true;
         trails = null;
@@ -183,7 +187,13 @@
 
     {#if selectedDestination}
         <div class="cai-navigate-destination">
-            <div class="cai-navigate-dest-info">
+            <button
+                class="cai-navigate-dest-focus"
+                onclick={() => focusDestination(selectedDestination, true)}
+                type="button"
+                title={selectedDestination.nome}
+            >
+                <div class="cai-navigate-dest-info">
                 {#if selectedDestination.type === 'rifugio'}
                     <Home size={14} strokeWidth={2} class="cai-nav-icon shelter"/>
                 {:else}
@@ -193,7 +203,8 @@
                 {#if selectedDestination.quota}
                     <span class="cai-navigate-dest-quota">{selectedDestination.quota}m</span>
                 {/if}
-            </div>
+                </div>
+            </button>
             <button class="cai-navigate-clear" onclick={clearDestination} aria-label={t.navigate.clear}>
                 <X size={14} strokeWidth={2}/>
             </button>
