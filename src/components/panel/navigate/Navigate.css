@@ -9,7 +9,7 @@
     background: var(--bg-panel);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border-radius: 14px;
+    border-radius: 12px;
     box-shadow: var(--shadow-panel);
     transition: box-shadow 0.25s ease;
 }
