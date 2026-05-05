@@ -181,3 +181,22 @@ export async function deleteVetta(id) {
     return !error;
 }
 
+/**
+ * Recupera rifugi e vette vicini a un sentiero entro un raggio dato.
+ * Chiama la funzione SQL `get_nearby_pois(sentiero_id, radius_meters)`.
+ * @param {number|string} sentieroId - ID del sentiero
+ * @param {number} radiusMeters - Raggio di ricerca in metri (default 500)
+ * @returns {Promise<{rifugi: Array, vette: Array} | null>}
+ */
+export async function fetchNearbyPois(sentieroId, radiusMeters = 500) {
+    const { data, error } = await supabase.rpc('get_nearby_pois', {
+        sentiero_id: Number(sentieroId),
+        radius_meters: radiusMeters
+    });
+    if (error) {
+        console.error('Errore caricamento POI vicini:', error);
+        return null;
+    }
+    return data;
+}
+

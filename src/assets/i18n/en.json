@@ -76,7 +76,8 @@
       "descrizione": "Description",
       "nome": "Name",
       "proprieta": "Ownership",
-      "quota": "Altitude"
+      "quota": "Altitude",
+      "lunghezza_km": "Length"
     }
   },
   "settings": {
@@ -128,6 +129,14 @@
     "finishTrail": "Finish tracing",
     "undoLastPoint": "Undo last point",
     "trailMinPoints": "At least 2 points required"
+  },
+  "nearby": {
+    "title": "Nearby",
+    "loading": "Searching...",
+    "noResults": "No points of interest nearby",
+    "shelter": "Shelter",
+    "peak": "Peak",
+    "meters": "m"
   }
 }
 

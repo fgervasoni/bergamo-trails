@@ -120,7 +120,7 @@ public/
 
 ```bash
 git clone <repo-url>
-cd Cai-pwa
+cd bergamo-trails-pwa
 npm install
 ```
 
@@ -145,9 +145,11 @@ I file di output vengono generati nella cartella `dist/`.
 
 ## Dati
 
-I dati geografici di partenza provengono dal servizio cartografico **Maggioli S.p.A.** per conto di **CAI Bergamo** e sono serviti tramite **Supabase (PostGIS)** in formato GeoJSON.
+I dati geografici di partenza provengono dal servizio cartografico **Maggioli S.p.A.** per conto di **CAI Bergamo** e
+sono serviti tramite **Supabase (PostGIS)** in formato GeoJSON.
 
-Il dataset originale dei sentieri e rifugi viene progressivamente arricchito dalla community con l'aggiunta di **vette**, nuovi punti di interesse e nuovi sentieri tracciati direttamente dall'app.
+Il dataset originale dei sentieri e rifugi viene progressivamente arricchito dalla community con l'aggiunta di **vette
+**, nuovi punti di interesse e nuovi sentieri tracciati direttamente dall'app.
 
 Il geocoding degli indirizzi utilizza
 il [World Geocoding Service](https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer) di Esri.
@@ -169,4 +171,5 @@ Basta collegare il repository a Netlify e il deploy avverrà automaticamente.
 
 ## Licenza
 
-Questo progetto è a uso privato. I dati cartografici di partenza sono di proprietà di CAI Bergamo / Maggioli S.p.A. e vengono integrati con contributi originali degli utenti.
+Questo progetto è a uso privato. I dati cartografici di partenza sono di proprietà di CAI Bergamo / Maggioli S.p.A. e
+vengono integrati con contributi originali degli utenti.

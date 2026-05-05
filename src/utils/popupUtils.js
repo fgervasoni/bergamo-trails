@@ -27,6 +27,10 @@ function formatValue(key, value, model) {
         if (key === 'quota') return `${value} m`;
         return String(value);
     }
+    // Lunghezza sentiero
+    if (key === 'lunghezza_km' && value != null) {
+        return `${value} km`;
+    }
     return String(value);
 }
 
@@ -80,6 +84,15 @@ export function buildPopupData(attrs, layerTitle, t) {
                 label: fieldLabels[key] || fieldToLabel(key),
                 value: formatValue(key, attrs[key], model)
             }));
+
+        // Aggiungi lunghezza calcolata per sentieri (campo non nello schema ma nel GeoJSON)
+        if (layerTitle === 'Sentieri' && attrs.lunghezza_km != null) {
+            fields.push({
+                key: 'lunghezza_km',
+                label: fieldLabels['lunghezza_km'] || 'Lunghezza',
+                value: formatValue('lunghezza_km', attrs.lunghezza_km, model)
+            });
+        }
     } else {
         fields = Object.entries(attrs)
             .filter(([key]) => !shouldSkip(key, model) && key !== titleField)

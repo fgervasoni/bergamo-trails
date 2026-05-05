@@ -76,7 +76,8 @@
       "descrizione": "Descrizione",
       "nome": "Nome",
       "proprieta": "Proprietà",
-      "quota": "Quota"
+      "quota": "Quota",
+      "lunghezza_km": "Lunghezza"
     }
   },
   "settings": {
@@ -128,6 +129,14 @@
     "finishTrail": "Termina tracciamento",
     "undoLastPoint": "Annulla ultimo punto",
     "trailMinPoints": "Servono almeno 2 punti"
+  },
+  "nearby": {
+    "title": "Nelle vicinanze",
+    "loading": "Ricerca...",
+    "noResults": "Nessun punto di interesse nelle vicinanze",
+    "shelter": "Rifugio",
+    "peak": "Vetta",
+    "meters": "m"
   }
 }
 

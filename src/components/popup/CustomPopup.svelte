@@ -1,9 +1,9 @@
 <script>
     import './CustomPopup.css';
-    import {Pencil, Trash2, X, Check, Loader, MapPinPlus} from 'lucide-svelte';
+    import {Pencil, Trash2, X, Check, Loader, MapPinPlus, Home, Mountain} from 'lucide-svelte';
     import {closeCustomPopup, mapState, popupState, refreshLayer} from '../../stores/mapStore.svelte.js';
     import {getT} from '../../assets/i18n/i18n.svelte.js';
-    import {updateRifugio, updateVetta, deleteRifugio, deleteVetta} from '../../services/trailsService.js';
+    import {updateRifugio, updateVetta, deleteRifugio, deleteVetta, fetchNearbyPois} from '../../services/trailsService.js';
     import {getModel, castValue, inputTypeFor} from '../../models/schema.js';
     import {authState} from '../../stores/authStore.svelte.js';
     import Graphic from '@arcgis/core/Graphic';
@@ -34,6 +34,10 @@
     let clickHandler = null;
     let previewGraphic = null;
 
+    /** Nearby POIs (solo per sentieri) */
+    let nearbyPois = $state(null); // { rifugi: [], vette: [] }
+    let nearbyLoading = $state(false);
+
     $effect(() => {
         if (popupState.open) {
             cachedTitle = popupState.title;
@@ -49,6 +53,13 @@
             saveStatus = '';
             closing = false;
             visible = true;
+            nearbyPois = null;
+            nearbyLoading = false;
+
+            // Carica POI vicini per sentieri
+            if (popupState.layerTitle === 'Sentieri' && popupState.featureId) {
+                loadNearbyPois(popupState.featureId);
+            }
         } else if (visible && !closing) {
             closing = true;
             setTimeout(() => {
@@ -56,9 +67,23 @@
                 closing = false;
                 editing = false;
                 confirmingDelete = false;
+                nearbyPois = null;
             }, 220);
         }
     });
+
+    async function loadNearbyPois(sentieroId) {
+        nearbyLoading = true;
+        const data = await fetchNearbyPois(sentieroId);
+        nearbyPois = data;
+        nearbyLoading = false;
+    }
+
+    function goToPoi(poi) {
+        const view = mapState.view;
+        if (!view || !poi.longitude || !poi.latitude) return;
+        view.goTo({ center: [poi.longitude, poi.latitude], zoom: 15 }, { duration: 600 });
+    }
 
     function dismiss() {
         stopPicking();
@@ -349,6 +374,43 @@
                         <span class="cai-popup-field-value cai-popup-coords-value">
                             {cachedCoordinates.latitude.toFixed(5)}, {cachedCoordinates.longitude.toFixed(5)}
                         </span>
+                    </div>
+                {/if}
+                <!-- Nelle vicinanze (solo sentieri) -->
+                {#if cachedLayerTitle === 'Sentieri'}
+                    <div class="cai-popup-nearby-section">
+                        <span class="cai-popup-field-label">{t.nearby.title}</span>
+                        {#if nearbyLoading}
+                            <div class="cai-popup-nearby-loading">
+                                <Loader size={14} strokeWidth={2} class="cai-spinning"/>
+                                <span>{t.nearby.loading}</span>
+                            </div>
+                        {:else if nearbyPois && (nearbyPois.rifugi.length > 0 || nearbyPois.vette.length > 0)}
+                            <div class="cai-popup-nearby-list">
+                                {#each nearbyPois.rifugi as poi}
+                                    <button class="cai-popup-nearby-item" onclick={() => goToPoi(poi)} type="button">
+                                        <Home size={12} strokeWidth={2} class="cai-nearby-icon shelter"/>
+                                        <span class="cai-popup-nearby-name">{poi.nome}</span>
+                                        {#if poi.quota}
+                                            <span class="cai-popup-nearby-quota">{poi.quota}{t.nearby.meters}</span>
+                                        {/if}
+                                        <span class="cai-popup-nearby-distance">{poi.distanza_m}{t.nearby.meters}</span>
+                                    </button>
+                                {/each}
+                                {#each nearbyPois.vette as poi}
+                                    <button class="cai-popup-nearby-item" onclick={() => goToPoi(poi)} type="button">
+                                        <Mountain size={12} strokeWidth={2} class="cai-nearby-icon peak"/>
+                                        <span class="cai-popup-nearby-name">{poi.nome}</span>
+                                        {#if poi.quota}
+                                            <span class="cai-popup-nearby-quota">{poi.quota}{t.nearby.meters}</span>
+                                        {/if}
+                                        <span class="cai-popup-nearby-distance">{poi.distanza_m}{t.nearby.meters}</span>
+                                    </button>
+                                {/each}
+                            </div>
+                        {:else if nearbyPois}
+                            <span class="cai-popup-nearby-empty">{t.nearby.noResults}</span>
+                        {/if}
                     </div>
                 {/if}
             {/if}
