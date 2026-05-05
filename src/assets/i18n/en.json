@@ -173,7 +173,8 @@
     "statusPending": "Pending",
     "statusApproved": "Approved",
     "statusRejected": "Rejected",
-    "delete": "Remove"
+    "delete": "Remove",
+    "deleteError": "Unable to remove the request"
   }
 }
 

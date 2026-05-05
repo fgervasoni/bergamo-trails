@@ -12,6 +12,7 @@
     let requests = $state(null);
     let loading = $state(false);
     let deletingId = $state(null);
+    let deleteError = $state('');
     let autoRefreshInterval = null;
 
     const AUTO_REFRESH_MS = 5 * 60 * 1000;
@@ -34,15 +35,21 @@
     async function refresh() {
         if (!authState.user?.email) return;
         loading = true;
+        deleteError = '';
         requests = await fetchUserRequests(authState.user.email);
         loading = false;
     }
 
     async function handleDelete(id) {
+        deleteError = '';
+        const confirmed = window.confirm(t.popup.deleteConfirm);
+        if (!confirmed) return;
         deletingId = id;
         const result = await deleteRequest(id);
         if (result.success) {
             requests = requests.filter(r => r.id !== id);
+        } else {
+            deleteError = t.request.deleteError;
         }
         deletingId = null;
     }
@@ -91,6 +98,12 @@
         </button>
     </div>
 
+    {#if deleteError}
+        <div class="cai-my-requests-loading">
+            <span>{deleteError}</span>
+        </div>
+    {/if}
+
     {#if loading && !requests}
         <div class="cai-my-requests-loading">
             <Loader size={14} strokeWidth={2} class="cai-spinning"/>
@@ -111,21 +124,19 @@
                     </div>
                     <div class="cai-my-request-bottom">
                         <span class="cai-my-request-date">{formatDate(req.created_at)}</span>
-                        {#if req.status !== 'pending'}
-                            <button
-                                class="cai-my-request-delete"
-                                onclick={() => handleDelete(req.id)}
-                                disabled={deletingId === req.id}
-                                aria-label={t.request.delete}
-                                title={t.request.delete}
-                            >
-                                {#if deletingId === req.id}
-                                    <Loader size={10} strokeWidth={2} class="cai-spinning"/>
-                                {:else}
-                                    <X size={10} strokeWidth={2}/>
-                                {/if}
-                            </button>
-                        {/if}
+                        <button
+                            class="cai-my-request-delete"
+                            onclick={() => handleDelete(req.id)}
+                            disabled={deletingId === req.id}
+                            aria-label={t.request.delete}
+                            title={t.request.delete}
+                        >
+                            {#if deletingId === req.id}
+                                <Loader size={10} strokeWidth={2} class="cai-spinning"/>
+                            {:else}
+                                <X size={10} strokeWidth={2}/>
+                            {/if}
+                        </button>
                     </div>
                 </div>
             {/each}

@@ -187,7 +187,7 @@
 /* Trails wrap */
 .cai-navigate-trails-wrap {
     padding: 8px 10px 10px;
-    max-height: 220px;
+    max-height: 400px;
     overflow-y: auto;
 }
 

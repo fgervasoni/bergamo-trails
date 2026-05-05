@@ -173,7 +173,8 @@
     "statusPending": "In attesa",
     "statusApproved": "Approvata",
     "statusRejected": "Rifiutata",
-    "delete": "Rimuovi"
+    "delete": "Rimuovi",
+    "deleteError": "Impossibile rimuovere la richiesta"
   }
 }
 
