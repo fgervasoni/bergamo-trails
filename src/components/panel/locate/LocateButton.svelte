@@ -47,26 +47,14 @@
      * Questa funzione viene chiamata anche da fuori (dopo che il permesso è concesso).
      */
     export function listenForOrientation() {
-        if (orientationListener) return;
-        if (typeof DeviceOrientationEvent === 'undefined') return;
-
-        // Su iOS, non aggiungere il listener se requestPermission esiste
-        // (verrà chiamato startOrientationAfterPermission dall'esterno)
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') return;
-
-        const handler = createOrientationHandler();
-        window.addEventListener('deviceorientation', handler, true);
-        orientationListener = handler;
+        startOrientationAfterPermission();
     }
 
     /**
      * Chiamata dopo che il permesso iOS è stato concesso (dal popup modale).
      */
     export function startOrientationAfterPermission() {
-        if (orientationListener) return;
-        const handler = createOrientationHandler();
-        window.addEventListener('deviceorientation', handler, true);
-        orientationListener = handler;
+        startOrientationListener();
     }
 
     function toggleTracking(event) {
@@ -89,9 +77,12 @@
         locating = true;
         error = false;
         firstFix = true;
+        // Ri-aggancia il giroscopio quando si riattiva il tracking.
+        // Su iOS prova a richiedere/riusare il permesso durante il gesto utente.
+        ensureOrientationForTracking();
 
 
-        const watchId = navigator.geolocation.watchPosition(
+        mapState.watchId = navigator.geolocation.watchPosition(
             (pos) => {
                 const pt = new Point({longitude: pos.coords.longitude, latitude: pos.coords.latitude});
                 lastPosition = pt;
@@ -116,8 +107,30 @@
             },
             {enableHighAccuracy: true, timeout: 10000, maximumAge: 2000}
         );
+    }
 
-        mapState.watchId = watchId;
+    async function ensureOrientationForTracking() {
+        if (orientationListener) return;
+        if (typeof DeviceOrientationEvent === 'undefined') return;
+
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try {
+                const state = await DeviceOrientationEvent.requestPermission();
+                if (state !== 'granted') return;
+            } catch (_) {
+                return;
+            }
+        }
+
+        startOrientationAfterPermission();
+    }
+
+    function startOrientationListener() {
+        if (orientationListener) return;
+        if (typeof DeviceOrientationEvent === 'undefined') return;
+        const handler = createOrientationHandler();
+        window.addEventListener('deviceorientation', handler, true);
+        orientationListener = handler;
     }
 
     function stopTracking() {
