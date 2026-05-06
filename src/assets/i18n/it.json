@@ -88,7 +88,8 @@
     "dark": "Scuro",
     "system": "Sistema",
     "account": "Account",
-    "credits": "Credits"
+    "credits": "Credits",
+    "apiQuota": "Routing API"
   },
   "auth": {
     "login": "Accedi",
@@ -127,7 +128,10 @@
     "gpsNotAvailable": "GPS non disponibile",
     "add": "Aggiungi",
     "trailDraw": "Clicca sulla mappa per tracciare il percorso",
+    "trailDrawHint": "Il routing è una funzione a consumo che segue i sentieri OSM. Usala con parsimonia.",
     "trailPoints": "{count} punti tracciati",
+    "trailRouting": "Calcolo percorso sui sentieri...",
+    "routingExhausted": "Limite giornaliero routing raggiunto. Il tracciamento continuerà con linee dirette.",
     "finishTrail": "Termina tracciamento",
     "undoLastPoint": "Annulla ultimo punto",
     "trailMinPoints": "Servono almeno 2 punti"

@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient.js';
+import {supabase} from '../lib/supabaseClient.js';
 
 /**
  * Carica i sentieri da Supabase come GeoJSON FeatureCollection.
@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabaseClient.js';
  * @returns {Promise<GeoJSON.FeatureCollection | null>}
  */
 export async function fetchSentieri() {
-    const { data, error } = await supabase.rpc('get_sentieri_geojson');
+    const {data, error} = await supabase.rpc('get_sentieri_geojson');
     if (error) {
         console.error('Errore caricamento sentieri:', error);
         return null;
@@ -20,7 +20,7 @@ export async function fetchSentieri() {
  * @returns {Promise<GeoJSON.FeatureCollection | null>}
  */
 export async function fetchRifugi() {
-    const { data, error } = await supabase.rpc('get_rifugi_geojson');
+    const {data, error} = await supabase.rpc('get_rifugi_geojson');
     if (error) {
         console.error('Errore caricamento rifugi:', error);
         return null;
@@ -33,7 +33,7 @@ export async function fetchRifugi() {
  * @returns {Promise<GeoJSON.FeatureCollection | null>}
  */
 export async function fetchVette() {
-    const { data, error } = await supabase.rpc('get_vette_geojson');
+    const {data, error} = await supabase.rpc('get_vette_geojson');
     if (error) {
         console.error('Errore caricamento vette:', error);
         return null;
@@ -47,7 +47,7 @@ export async function fetchVette() {
  * @param {object} updates
  */
 export async function updateVetta(id, updates) {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
         .from('vette')
         .update(updates)
         .eq('id', id)
@@ -69,7 +69,7 @@ export async function updateVetta(id, updates) {
  * @param {object} updates - Campi da aggiornare (es. { numero_cai: '101', difficolta: 'E' })
  */
 export async function updateSentiero(id, updates) {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
         .from('sentieri')
         .update(updates)
         .eq('id', id)
@@ -87,7 +87,7 @@ export async function updateSentiero(id, updates) {
  * @param {object} updates - Campi da aggiornare (es. { nome: 'Rifugio Nuovo', quota: 1500 })
  */
 export async function updateRifugio(id, updates) {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
         .from('rifugi')
         .update(updates)
         .eq('id', id)
@@ -108,7 +108,7 @@ export async function updateRifugio(id, updates) {
  * @param {object} sentiero - { numero_cai, difficolta, geom (WKT o GeoJSON) }
  */
 export async function insertSentiero(sentiero) {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
         .from('sentieri')
         .insert(sentiero)
         .select();
@@ -124,7 +124,7 @@ export async function insertSentiero(sentiero) {
  * @param {object} rifugio - { nome, proprieta, quota, geom (WKT) }
  */
 export async function insertRifugio(rifugio) {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
         .from('rifugi')
         .insert(rifugio)
         .select();
@@ -140,7 +140,7 @@ export async function insertRifugio(rifugio) {
  * @param {object} vetta - { nome, quota, descrizione, geom (WKT) }
  */
 export async function insertVetta(vetta) {
-    const { data, error } = await supabase
+    const {data, error} = await supabase
         .from('vette')
         .insert(vetta)
         .select();
@@ -156,7 +156,7 @@ export async function insertVetta(vetta) {
  * @param {number|string} id
  */
 export async function deleteSentiero(id) {
-    const { error } = await supabase.from('sentieri').delete().eq('id', id);
+    const {error} = await supabase.from('sentieri').delete().eq('id', id);
     if (error) console.error('Errore eliminazione sentiero:', error);
     return !error;
 }
@@ -166,7 +166,7 @@ export async function deleteSentiero(id) {
  * @param {number|string} id
  */
 export async function deleteRifugio(id) {
-    const { error } = await supabase.from('rifugi').delete().eq('id', id);
+    const {error} = await supabase.from('rifugi').delete().eq('id', id);
     if (error) console.error('Errore eliminazione rifugio:', error);
     return !error;
 }
@@ -176,7 +176,7 @@ export async function deleteRifugio(id) {
  * @param {number|string} id
  */
 export async function deleteVetta(id) {
-    const { error } = await supabase.from('vette').delete().eq('id', id);
+    const {error} = await supabase.from('vette').delete().eq('id', id);
     if (error) console.error('Errore eliminazione vetta:', error);
     return !error;
 }
@@ -189,7 +189,7 @@ export async function deleteVetta(id) {
  * @returns {Promise<{rifugi: Array, vette: Array} | null>}
  */
 export async function fetchNearbyPois(sentieroId, radiusMeters = 500) {
-    const { data, error } = await supabase.rpc('get_nearby_pois', {
+    const {data, error} = await supabase.rpc('get_nearby_pois', {
         sentiero_id: Number(sentieroId),
         radius_meters: radiusMeters
     });
@@ -209,7 +209,7 @@ export async function fetchNearbyPois(sentieroId, radiusMeters = 500) {
  * @returns {Promise<Array<{id, numero_cai, difficolta, distanza_m, lunghezza_km}> | null>}
  */
 export async function fetchTrailsToDestination(destType, destId, radiusMeters = 1000) {
-    const { data, error } = await supabase.rpc('get_trails_to_destination', {
+    const {data, error} = await supabase.rpc('get_trails_to_destination', {
         dest_type: destType,
         dest_id: Number(destId),
         radius_meters: radiusMeters
@@ -219,5 +219,123 @@ export async function fetchTrailsToDestination(destType, destId, radiusMeters = 
         return null;
     }
     return data;
+}
+
+/**
+ * Stato quota API OpenRouteService — oggetto mutabile aggiornato ad ogni chiamata.
+ * Per renderlo reattivo in Svelte 5, importare `orsQuotaState` da mapStore.
+ */
+export const orsQuota = {remaining: null, limit: null, exhausted: false};
+
+/** Callback opzionale per notificare aggiornamenti quota alla UI */
+let _onQuotaUpdate = null;
+
+export function setOrsQuotaCallback(fn) {
+    _onQuotaUpdate = fn;
+}
+
+function notifyQuotaUpdate() {
+    if (_onQuotaUpdate) _onQuotaUpdate(orsQuota);
+}
+
+/**
+ * Salva la quota ORS su Supabase (tabella `settings`, chiave `ors_quota`).
+ */
+async function persistOrsQuota() {
+    try {
+        await supabase.from('settings').upsert({
+            key: 'ors_quota',
+            value: {remaining: orsQuota.remaining, limit: orsQuota.limit, updated_at: new Date().toISOString()}
+        }, {onConflict: 'key'});
+    } catch (_) {
+    }
+}
+
+/**
+ * Carica la quota ORS salvata da Supabase (senza consumare una chiamata API).
+ * Chiamare all'avvio per l'admin.
+ */
+export async function loadOrsQuota() {
+    try {
+        const {data} = await supabase.from('settings').select('value').eq('key', 'ors_quota').single();
+        if (data?.value) {
+            orsQuota.remaining = data.value.remaining;
+            orsQuota.limit = data.value.limit;
+            if (orsQuota.remaining != null && orsQuota.remaining <= 0) {
+                orsQuota.exhausted = true;
+            }
+            notifyQuotaUpdate();
+        }
+    } catch (_) {
+    }
+}
+
+/**
+ * Calcola un segmento di percorso tra due punti seguendo il grafo stradale/sentieristico OSM.
+ * Usa OpenRouteService con profilo "foot-hiking" (escursionismo).
+ * API docs: https://openrouteservice.org/dev/#/api-docs/v2/directions
+ *
+ * @param {{longitude: number, latitude: number}} startPoint
+ * @param {{longitude: number, latitude: number}} endPoint
+ * @returns {Promise<number[][] | null>} Array di [lon, lat] oppure null se non disponibile
+ */
+export async function fetchTrailRouteSegment(startPoint, endPoint) {
+    // Se quota esaurita, non fare la chiamata
+    if (orsQuota.exhausted) return null;
+
+    const apiKey = import.meta.env.VITE_ORS_API_KEY;
+    // TODO: verrà deprecato ad agosto 2026
+    // const url = 'https://api.heigit.org/openrouteservice/v2/directions/foot-hiking/geojson';
+    const url = 'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson';
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': apiKey
+            },
+            body: JSON.stringify({
+                coordinates: [
+                    [startPoint.longitude, startPoint.latitude],
+                    [endPoint.longitude, endPoint.latitude]
+                ]
+            })
+        });
+
+        // Leggi quota dagli header
+        const remaining = response.headers.get('x-ratelimit-remaining');
+        const limit = response.headers.get('x-ratelimit-limit');
+        if (remaining != null) orsQuota.remaining = parseInt(remaining, 10);
+        if (limit != null) orsQuota.limit = parseInt(limit, 10);
+
+        if (response.status === 429) {
+            orsQuota.exhausted = true;
+            orsQuota.remaining = 0;
+            notifyQuotaUpdate();
+            persistOrsQuota();
+            return null;
+        }
+
+        if (!response.ok) return null;
+
+        if (orsQuota.remaining != null && orsQuota.remaining <= 0) {
+            orsQuota.exhausted = true;
+        }
+        notifyQuotaUpdate();
+        persistOrsQuota();
+
+        const data = await response.json();
+        const coordinates = data?.features?.[0]?.geometry?.coordinates;
+
+        if (!Array.isArray(coordinates) || coordinates.length < 2) {
+            return null;
+        }
+
+        return coordinates; // [[lon, lat], [lon, lat], ...]
+    } catch (e) {
+        console.warn('Routing OpenRouteService non disponibile, uso fallback lineare:', e.message);
+        return null;
+    }
 }
 

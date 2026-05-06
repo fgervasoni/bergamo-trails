@@ -20,9 +20,10 @@
         X
     } from 'lucide-svelte';
     import {availableLocales, getT, i18n, setLocale} from './assets/i18n/i18n.svelte.js';
-    import {closeCustomPopup, popupState, uiState} from './stores/mapStore.svelte.js';
+    import {closeCustomPopup, popupState, uiState, orsQuotaState} from './stores/mapStore.svelte.js';
     import {initTheme, setTheme, themeState} from './stores/themeStore.svelte.js';
     import {authState, initAuth, isAdmin, login, logout, register} from './stores/authStore.svelte.js';
+    import {orsQuota, setOrsQuotaCallback, loadOrsQuota} from './services/trailsService.js';
     import {onMount} from 'svelte';
 
     let t = $derived(getT());
@@ -51,6 +52,14 @@
     onMount(() => {
         initTheme();
         initAuth();
+        // Wire ORS quota updates to reactive state
+        setOrsQuotaCallback((q) => {
+            orsQuotaState.remaining = q.remaining;
+            orsQuotaState.limit = q.limit;
+            orsQuotaState.exhausted = q.exhausted;
+        });
+        // Carica quota ORS dal DB (senza consumare chiamate API)
+        loadOrsQuota();
     });
 
     function onMapReady() {
@@ -266,6 +275,11 @@
                     <div class="cai-auth-logged">
                         <span class="cai-auth-email"
                               title={authState.user.email}>{authState.user.email}</span>
+                        {#if isAdmin() && orsQuotaState.remaining != null}
+                            <span class="cai-auth-quota" title={t.settings.apiQuota}>
+                                {orsQuotaState.remaining}/{orsQuotaState.limit ?? '?'}
+                            </span>
+                        {/if}
                         <button class="cai-auth-logout-btn" onclick={handleLogout}
                                 aria-label={t.auth.logout} title={t.auth.logout}>
                             <LogOut size={14} strokeWidth={2}/>

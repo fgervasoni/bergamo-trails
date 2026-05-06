@@ -73,3 +73,6 @@ export function closeCustomPopup() {
     popupState.coordinates = null;
     clearHighlight();
 }
+
+/** Stato reattivo quota ORS per la UI */
+export const orsQuotaState = $state({ remaining: null, limit: null, exhausted: false });

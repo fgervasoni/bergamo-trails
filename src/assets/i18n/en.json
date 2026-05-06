@@ -88,7 +88,8 @@
     "dark": "Dark",
     "system": "System",
     "account": "Account",
-    "credits": "Credits"
+    "credits": "Credits",
+    "apiQuota": "Routing API"
   },
   "auth": {
     "login": "Log in",
@@ -127,7 +128,10 @@
     "gpsNotAvailable": "GPS not available",
     "add": "Add",
     "trailDraw": "Click on the map to trace the path",
+    "trailDrawHint": "Routing is a resource-intensive feature that follows OSM paths. Use it sparingly.",
     "trailPoints": "{count} points traced",
+    "trailRouting": "Computing route on trails...",
+    "routingExhausted": "Daily routing limit reached. Tracing will continue with straight lines.",
     "finishTrail": "Finish tracing",
     "undoLastPoint": "Undo last point",
     "trailMinPoints": "At least 2 points required"

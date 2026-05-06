@@ -156,8 +156,12 @@
 }
 
 @keyframes cai-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .cai-add-save-btn {
@@ -198,5 +202,15 @@
 
 .cai-add-status.error {
     color: #c0392b;
+}
+
+.cai-add-hint {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.3;
+    background: rgb(209 89 89 / 0.28);
+    padding: 5px;
+    border-radius: 6px;
 }
 

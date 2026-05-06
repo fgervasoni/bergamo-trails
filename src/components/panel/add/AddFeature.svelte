@@ -5,7 +5,8 @@
     import {refreshLayer, triggerRequestsRefresh} from '../../../stores/mapStore.svelte.js';
     import {authState, isAdmin} from '../../../stores/authStore.svelte.js';
     import {getT} from '../../../assets/i18n/i18n.svelte.js';
-    import {insertRifugio, insertVetta, insertSentiero} from '../../../services/trailsService.js';
+    import {insertRifugio, insertVetta, insertSentiero, fetchTrailRouteSegment} from '../../../services/trailsService.js';
+    import {orsQuotaState} from '../../../stores/mapStore.svelte.js';
     import {submitRequest} from '../../../services/requestsService.js';
     import {getModel, castValue, DIFFICOLTA_VALUES} from '../../../models/schema.js';
     import Graphic from '@arcgis/core/Graphic';
@@ -28,8 +29,11 @@
 
     // Trail drawing state
     let trailPoints = $state([]);
+    let routedSegments = $state([]); // Array di segmenti routed [[lon,lat][], ...]
+    let routedTrailCoords = $state([]);
     let drawingTrail = $state(false);
     let trailPreviewGraphics = $state([]);
+    let routingLoading = $state(false);
 
     let currentLayerTitle = $derived(
         featureType === 'rifugio' ? 'Rifugi' :
@@ -54,6 +58,8 @@
         saveStatus = '';
         selectedPoint = null;
         trailPoints = [];
+        routedSegments = [];
+        routedTrailCoords = [];
         const layerTitle = type === 'rifugio' ? 'Rifugi' : type === 'vetta' ? 'Vette' : 'Sentieri';
         const model = getModel(layerTitle);
         if (model) {
@@ -71,6 +77,8 @@
         saveStatus = '';
         selectedPoint = null;
         trailPoints = [];
+        routedSegments = [];
+        routedTrailCoords = [];
         stopPicking();
         stopDrawing();
         clearAllPreviews();
@@ -168,8 +176,16 @@
         clickHandler = view.on('click', (event) => {
             event.stopPropagation();
             const pt = event.mapPoint;
-            trailPoints = [...trailPoints, {longitude: pt.longitude, latitude: pt.latitude}];
-            updateTrailPreview();
+            const newPoint = {longitude: pt.longitude, latitude: pt.latitude};
+            trailPoints = [...trailPoints, newPoint];
+
+            // Routing solo dell'ultimo segmento, senza bloccare
+            if (trailPoints.length >= 2) {
+                const prevPoint = trailPoints[trailPoints.length - 2];
+                routeLastSegment(prevPoint, newPoint, trailPoints.length - 2);
+            } else {
+                drawPreview();
+            }
         });
     }
 
@@ -186,11 +202,69 @@
     function undoLastTrailPoint() {
         if (trailPoints.length > 0) {
             trailPoints = trailPoints.slice(0, -1);
-            updateTrailPreview();
+            routedSegments = routedSegments.slice(0, trailPoints.length > 0 ? trailPoints.length - 1 : 0);
+            rebuildRoutedCoords();
+            drawPreview();
         }
     }
 
-    function updateTrailPreview() {
+    function toStraightCoords(points) {
+        return points.map(p => [p.longitude, p.latitude]);
+    }
+
+    /**
+     * Calcola il routing per l'ultimo segmento aggiunto.
+     * Mostra subito una linea dritta come preview, poi aggiorna con il routing.
+     */
+    async function routeLastSegment(start, end, segmentIndex) {
+        // Segmento dritto come base
+        const straight = [[start.longitude, start.latitude], [end.longitude, end.latitude]];
+        routedSegments[segmentIndex] = straight;
+        rebuildRoutedCoords();
+        drawPreview();
+
+        // Se quota esaurita, non tentare il routing
+        if (orsQuotaState.exhausted) return;
+
+        // Calcola routing reale in background
+        routingLoading = true;
+        try {
+            const routed = await fetchTrailRouteSegment(start, end);
+            if (routed && routed.length >= 2) {
+                if (segmentIndex < routedSegments.length) {
+                    routedSegments[segmentIndex] = routed;
+                    rebuildRoutedCoords();
+                    drawPreview();
+                }
+            }
+        } catch (_) {
+            // Mantiene fallback dritto
+        } finally {
+            routingLoading = false;
+        }
+    }
+
+    function rebuildRoutedCoords() {
+        let merged = [];
+        for (const segment of routedSegments) {
+            if (!segment || segment.length === 0) continue;
+            if (merged.length === 0) {
+                merged = [...segment];
+            } else {
+                // Evita duplicati al punto di giunzione
+                const [lastLon, lastLat] = merged[merged.length - 1];
+                const [firstLon, firstLat] = segment[0];
+                if (Math.abs(lastLon - firstLon) < 1e-8 && Math.abs(lastLat - firstLat) < 1e-8) {
+                    merged = [...merged, ...segment.slice(1)];
+                } else {
+                    merged = [...merged, ...segment];
+                }
+            }
+        }
+        routedTrailCoords = merged;
+    }
+
+    function drawPreview() {
         const layer = mapState.previewLayer;
         if (!layer) return;
 
@@ -200,7 +274,7 @@
         }
         trailPreviewGraphics = [];
 
-        // Draw points
+        // Draw waypoint markers
         for (const pt of trailPoints) {
             const g = new Graphic({
                 geometry: new Point({longitude: pt.longitude, latitude: pt.latitude}),
@@ -215,11 +289,14 @@
             trailPreviewGraphics = [...trailPreviewGraphics, g];
         }
 
-        // Draw line if 2+ points
-        if (trailPoints.length >= 2) {
-            const paths = [trailPoints.map(p => [p.longitude, p.latitude])];
+        // Draw line
+        const pathCoords = routedTrailCoords.length >= 2
+            ? routedTrailCoords
+            : toStraightCoords(trailPoints);
+
+        if (pathCoords.length >= 2) {
             const lineGraphic = new Graphic({
-                geometry: new Polyline({paths}),
+                geometry: new Polyline({paths: [pathCoords]}),
                 symbol: new SimpleLineSymbol({
                     color: [230, 111, 81, 0.9],
                     width: 3,
@@ -260,7 +337,10 @@
         if (isPointFeature) {
             record.geom = `SRID=4326;POINT(${selectedPoint.longitude} ${selectedPoint.latitude})`;
         } else if (isTrailFeature) {
-            const coordsStr = trailPoints.map(p => `${p.longitude} ${p.latitude}`).join(',');
+            const coords = routedTrailCoords.length >= 2
+                ? routedTrailCoords
+                : toStraightCoords(trailPoints);
+            const coordsStr = coords.map(([lon, lat]) => `${lon} ${lat}`).join(',');
             record.geom = `SRID=4326;LINESTRING(${coordsStr})`;
         }
 
@@ -404,10 +484,16 @@
                 {#if isTrailFeature}
                     <div class="cai-add-location">
                         <label class="cai-add-field-label">{t.addFeature.trailDraw}</label>
+                        {#if !isAdmin()}
+                            <span class="cai-add-hint">{t.addFeature.trailDrawHint}</span>
+                        {/if}
                         {#if trailPoints.length > 0}
                             <span class="cai-add-coords">
                                 {t.addFeature.trailPoints.replace('{count}', trailPoints.length)}
                             </span>
+                        {/if}
+                        {#if routingLoading}
+                            <span class="cai-add-status">{t.addFeature.trailRouting}</span>
                         {/if}
                         <div class="cai-add-location-buttons">
                             {#if !drawingTrail}
@@ -445,6 +531,9 @@
                         </div>
                         {#if trailPoints.length > 0 && trailPoints.length < 2}
                             <span class="cai-add-status error">{t.addFeature.trailMinPoints}</span>
+                        {/if}
+                        {#if orsQuotaState.exhausted}
+                            <span class="cai-add-status error">{t.addFeature.routingExhausted}</span>
                         {/if}
                     </div>
                 {/if}

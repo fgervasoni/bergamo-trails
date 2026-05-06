@@ -11,6 +11,7 @@
     import {getT} from '../../assets/i18n/i18n.svelte.js';
     import {
         deleteRifugio,
+        deleteSentiero,
         deleteVetta,
         fetchNearbyPois,
         updateRifugio,
@@ -272,7 +273,9 @@
         try {
             if (isAdmin()) {
                 // Admin: elimina direttamente
-                const deleteFn = cachedLayerTitle === 'Vette' ? deleteVetta : deleteRifugio;
+                const deleteFn = cachedLayerTitle === 'Vette' ? deleteVetta
+                    : cachedLayerTitle === 'Sentieri' ? deleteSentiero
+                    : deleteRifugio;
                 const success = await deleteFn(cachedFeatureId);
                 if (success) {
                     saveStatus = 'deleted';

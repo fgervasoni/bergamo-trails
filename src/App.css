@@ -566,6 +566,18 @@
     min-width: 0;
 }
 
+.cai-auth-quota {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-hover);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
 .cai-auth-logout-btn {
     display: flex;
     align-items: center;

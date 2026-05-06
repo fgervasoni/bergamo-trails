@@ -15,11 +15,13 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 - **Visualizzazione sentieri** con classificazione per difficoltà (T, E, EE, EEA)
 - **Visualizzazione rifugi** con dettagli (nome, quota, proprietà)
 - **Visualizzazione vette** con quota e descrizione
-- **Navigazione verso destinazione** — cerca un rifugio o una vetta e vedi i sentieri che lo raggiungono, divisi tra accesso diretto e tramite collegamento
+- **Navigazione verso destinazione** — cerca un rifugio o una vetta e vedi i sentieri che lo raggiungono, divisi tra
+  accesso diretto e tramite collegamento
 - **Punti di interesse nelle vicinanze** — selezionando un sentiero vengono mostrati rifugi e vette vicini con distanza
 - **Aggiunta nuovi punti** (rifugi, vette) da mappa o posizione GPS attuale
-- **Tracciamento nuovi sentieri** con disegno polyline interattivo
-- **Sistema di richieste** — gli utenti non-admin inviano richieste di creazione, modifica ed eliminazione che vengono revisionate dall'admin
+- **Tracciamento nuovi sentieri** con routing automatico su grafo OSM (OpenRouteService foot-hiking)
+- **Sistema di richieste** — gli utenti non-admin inviano richieste di creazione, modifica ed eliminazione che vengono
+  revisionate dall'admin
 - **Motivazione obbligatoria per eliminazione** — le richieste di eliminazione richiedono una motivazione
 - **Le mie richieste** — pannello per visualizzare lo stato delle proprie richieste con auto-refresh
 - **Geolocalizzazione** con tracciamento continuo e bussola (giroscopio su mobile)
@@ -37,13 +39,14 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 
 ## Tech Stack
 
-| Tecnologia                                                          | Versione | Utilizzo                        |
-|---------------------------------------------------------------------|----------|---------------------------------|
-| [Svelte](https://svelte.dev)                                        | 5        | Framework UI (runes mode)       |
-| [Vite](https://vitejs.dev)                                          | 6        | Build tool e dev server         |
-| [ArcGIS Maps SDK for JS](https://developers.arcgis.com/javascript/) | 5        | Mappa, layer, geocoding         |
-| [Supabase](https://supabase.com)                                    | 2.x      | Database PostGIS, auth e RLS    |
-| [Lucide Svelte](https://lucide.dev)                                 | 1.x      | Icone SVG                       |
+| Tecnologia                                                          | Versione | Utilizzo                     |
+|---------------------------------------------------------------------|----------|------------------------------|
+| [Svelte](https://svelte.dev)                                        | 5        | Framework UI (runes mode)    |
+| [Vite](https://vitejs.dev)                                          | 6        | Build tool e dev server      |
+| [ArcGIS Maps SDK for JS](https://developers.arcgis.com/javascript/) | 5        | Mappa, layer, geocoding      |
+| [Supabase](https://supabase.com)                                    | 2.x      | Database PostGIS, auth e RLS |
+| [OpenRouteService](https://openrouteservice.org)                    | v2       | Routing foot-hiking su OSM   |
+| [Lucide Svelte](https://lucide.dev)                                 | 1.x      | Icone SVG                    |
 
 ---
 
@@ -51,53 +54,64 @@ Progressive Web App installabile, accessibile da desktop e dispositivi mobili.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Frontend (PWA)                        │
-│  Svelte 5 + Vite + ArcGIS Maps SDK                         │
+│                        Frontend (PWA)                       │
+│  Svelte 5 + Vite + ArcGIS Maps SDK                          │
 ├─────────────────────────────────────────────────────────────┤
-│  Components                                                  │
+│  Components                                                 │
 │  ├── MapContainer        → Mappa Esri, GeoJSON layers       │
 │  ├── CustomPopup         → Lettura/modifica/eliminazione    │
-│  ├── AddFeature          → Creazione feature (punto/linea)  │
+│  ├── AddFeature          → Creazione feature + routing OSM  │
 │  ├── Navigate            → Ricerca sentieri verso POI       │
 │  ├── AdminPanel          → Gestione richieste (admin)       │
 │  ├── MyRequests          → Stato richieste (utente)         │
 │  ├── Legend / Basemap    → UI legenda e mappa base          │
 │  └── LocateButton        → GPS + bussola                    │
 ├─────────────────────────────────────────────────────────────┤
-│  Services                                                    │
-│  ├── trailsService       → CRUD dirette (admin)             │
+│  Services                                                   │
+│  ├── trailsService       → CRUD + routing OpenRouteService  │
 │  └── requestsService     → Submit/fetch/delete richieste    │
 ├─────────────────────────────────────────────────────────────┤
-│  Stores ($state)                                             │
-│  ├── mapStore            → Vista, layer, popup, UI signals  │
+│  Stores ($state)                                            │
+│  ├── mapStore            → Vista, layer, popup, UI, quota   │
 │  ├── authStore           → Sessione utente, ruoli           │
 │  └── themeStore          → Tema chiaro/scuro/sistema        │
 └─────────────────────────────────────────────────────────────┘
                               │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     Supabase (Backend)                       │
-├─────────────────────────────────────────────────────────────┤
-│  Database (PostGIS)                                          │
-│  ├── rifugi          → Punti rifugi con geometria           │
-│  ├── sentieri        → Linee sentieri con difficoltà        │
-│  ├── vette           → Punti vette con quota                │
-│  └── requests        → Richieste modifica da utenti         │
-├─────────────────────────────────────────────────────────────┤
-│  Auth                                                        │
-│  └── Email/password con conferma email                      │
-├─────────────────────────────────────────────────────────────┤
-│  RLS Policies                                                │
-│  ├── Admin: lettura/scrittura completa su tutto             │
-│  ├── Utenti: lettura proprie richieste                      │
-│  ├── Utenti: inserimento richieste                          │
-│  └── Utenti: eliminazione proprie richieste processate      │
-├─────────────────────────────────────────────────────────────┤
-│  Functions (PostGIS)                                         │
-│  ├── get_trails_to_destination → Sentieri vicini a un POI   │
-│  └── get_nearby_pois          → POI vicini a un sentiero    │
-└─────────────────────────────────────────────────────────────┘
+                    ┌─────────┴──────────┐
+                    ▼                    ▼
+┌────────────────────────────┐  ┌───────────────────────────┐
+│     Supabase (Backend)     │  │  OpenRouteService (API)   │
+├────────────────────────────┤  ├───────────────────────────┤
+│  Database (PostGIS)        │  │  Profilo: foot-hiking     │
+│  ├── rifugi                │  │  Routing su grafo OSM     │
+│  ├── sentieri              │  │  Rate limit: 2000/giorno  │
+│  ├── vette                 │  │  Fallback: linea diretta  │
+│  └── requests              │  └───────────────────────────┘
+├────────────────────────────┤
+│  Auth                      │
+│  └── Email/password        │
+├────────────────────────────┤
+│  RLS Policies              │
+│  ├── Admin: full access    │
+│  ├── Utenti: own requests  │
+│  └── Utenti: insert/delete │
+├────────────────────────────┤
+│  Functions (PostGIS)       │
+│  ├── get_trails_to_dest    │
+│  └── get_nearby_pois       │
+└────────────────────────────┘
 ```
+
+### Routing Sentieri (OpenRouteService)
+
+Il tracciamento di nuovi sentieri utilizza l'API **OpenRouteService** con profilo `foot-hiking` per far seguire al
+percorso il grafo stradale/sentieristico OpenStreetMap:
+
+1. L'utente clicca waypoint sulla mappa
+2. Per ogni coppia di punti consecutivi, viene richiesto il routing a ORS
+3. La preview mostra immediatamente una linea dritta, poi si aggiorna con il percorso reale
+4. Se la quota giornaliera è esaurita (HTTP 429), il tracciamento continua con linee dirette
+5. L'admin vede il contatore `remaining/limit` accanto alla propria email
 
 ### Flusso Richieste (Utente non-admin)
 
@@ -198,6 +212,19 @@ cd bergamo-trails-pwa
 npm install
 ```
 
+### Variabili d'ambiente
+
+Copia `.env.example` in `.env` e configura:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_ORS_API_KEY=your-openrouteservice-api-key
+```
+
+Per ottenere una API key ORS gratuita (2000
+req/giorno): [openrouteservice.org/dev](https://openrouteservice.org/dev/#/signup)
+
 ### Sviluppo
 
 ```bash
@@ -222,7 +249,8 @@ I file di output vengono generati nella cartella `dist/`.
 I dati geografici di partenza provengono dal servizio cartografico **Maggioli S.p.A.** per conto di **CAI Bergamo** e
 sono serviti tramite **Supabase (PostGIS)** in formato GeoJSON.
 
-Il dataset originale dei sentieri e rifugi viene progressivamente arricchito dalla community con l'aggiunta di **vette**,
+Il dataset originale dei sentieri e rifugi viene progressivamente arricchito dalla community con l'aggiunta di **vette
+**,
 nuovi punti di interesse e nuovi sentieri tracciati direttamente dall'app.
 
 La funzionalità "Raggiungi" utilizza una funzione PostGIS (`get_trails_to_destination`) per calcolare i sentieri
