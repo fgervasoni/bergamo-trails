@@ -223,9 +223,9 @@ export async function fetchTrailsToDestination(destType, destId, radiusMeters = 
 
 /**
  * Stato quota API OpenRouteService — oggetto mutabile aggiornato ad ogni chiamata.
- * Per renderlo reattivo in Svelte 5, importare `orsQuotaState` da mapStore.
+ * Siccome ORS non espone gli header rate-limit via CORS, tracciamo localmente.
  */
-export const orsQuota = {remaining: null, limit: null, exhausted: false};
+export const orsQuota = {remaining: null, limit: 2000, exhausted: false};
 
 /** Rate limiter: max 40 richieste per minuto (condiviso tra tutti gli utenti via DB) */
 const RATE_LIMIT_PER_MINUTE = 40;
@@ -308,19 +308,25 @@ export async function loadOrsQuota() {
 
             if (savedDate && savedDate !== today) {
                 // Nuovo giorno: resetta quota
-                orsQuota.remaining = data.value.limit ?? null;
-                orsQuota.limit = data.value.limit ?? null;
+                orsQuota.remaining = orsQuota.limit;
                 orsQuota.exhausted = false;
             } else {
-                orsQuota.remaining = data.value.remaining;
-                orsQuota.limit = data.value.limit;
+                orsQuota.remaining = data.value.remaining ?? orsQuota.limit;
+                orsQuota.limit = data.value.limit ?? orsQuota.limit;
                 if (orsQuota.remaining != null && orsQuota.remaining <= 0) {
                     orsQuota.exhausted = true;
                 }
             }
             notifyQuotaUpdate();
+        } else {
+            // Prima volta: inizializza con il limite
+            orsQuota.remaining = orsQuota.limit;
+            notifyQuotaUpdate();
         }
     } catch (_) {
+        // Prima volta o errore: inizializza
+        orsQuota.remaining = orsQuota.limit;
+        notifyQuotaUpdate();
     }
 }
 
@@ -360,10 +366,17 @@ export async function fetchTrailRouteSegment(startPoint, endPoint) {
             })
         });
 
-        // Leggi quota dagli header
+        // Leggi quota dagli header (potrebbe non funzionare via CORS)
         const remaining = response.headers.get('x-ratelimit-remaining');
         const limit = response.headers.get('x-ratelimit-limit');
-        if (remaining != null) orsQuota.remaining = parseInt(remaining, 10);
+        if (remaining != null) {
+            orsQuota.remaining = parseInt(remaining, 10);
+        } else {
+            // Fallback: decrementa manualmente
+            if (orsQuota.remaining != null) {
+                orsQuota.remaining = Math.max(0, orsQuota.remaining - 1);
+            }
+        }
         if (limit != null) orsQuota.limit = parseInt(limit, 10);
 
         if (response.status === 429) {
