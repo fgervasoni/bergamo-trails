@@ -227,6 +227,42 @@ export async function fetchTrailsToDestination(destType, destId, radiusMeters = 
  */
 export const orsQuota = {remaining: null, limit: null, exhausted: false};
 
+/** Rate limiter: max 40 richieste per minuto (condiviso tra tutti gli utenti via DB) */
+const RATE_LIMIT_PER_MINUTE = 40;
+
+/**
+ * Controlla e aggiorna il rate limit al minuto salvato su DB (condiviso tra utenti).
+ * @returns {Promise<boolean>} true se la richiesta può essere fatta
+ */
+async function canMakeRequest() {
+    try {
+        const {data} = await supabase.from('settings').select('value').eq('key', 'ors_minute_rate').single();
+        const now = Date.now();
+        let timestamps = [];
+
+        if (data?.value?.timestamps) {
+            // Filtra timestamp più vecchi di 60 secondi
+            timestamps = data.value.timestamps.filter(ts => now - ts < 60000);
+        }
+
+        if (timestamps.length >= RATE_LIMIT_PER_MINUTE) {
+            return false;
+        }
+
+        // Aggiungi il timestamp corrente con email utente e salva
+        const email = (await supabase.auth.getUser())?.data?.user?.email ?? 'unknown';
+        timestamps.push(now);
+        await supabase.from('settings').upsert({
+            key: 'ors_minute_rate',
+            value: {timestamps, last_user: email}
+        }, {onConflict: 'key'});
+
+        return true;
+    } catch (_) {
+        return true;
+    }
+}
+
 /** Callback opzionale per notificare aggiornamenti quota alla UI */
 let _onQuotaUpdate = null;
 
@@ -243,9 +279,15 @@ function notifyQuotaUpdate() {
  */
 async function persistOrsQuota() {
     try {
+        const email = (await supabase.auth.getUser())?.data?.user?.email ?? 'unknown';
         await supabase.from('settings').upsert({
             key: 'ors_quota',
-            value: {remaining: orsQuota.remaining, limit: orsQuota.limit, updated_at: new Date().toISOString()}
+            value: {
+                remaining: orsQuota.remaining,
+                limit: orsQuota.limit,
+                updated_at: new Date().toISOString(),
+                last_user: email
+            }
         }, {onConflict: 'key'});
     } catch (_) {
     }
@@ -254,15 +296,27 @@ async function persistOrsQuota() {
 /**
  * Carica la quota ORS salvata da Supabase (senza consumare una chiamata API).
  * Chiamare all'avvio per l'admin.
+ * Se il dato salvato è di un giorno precedente, resetta la quota (reset giornaliero a mezzanotte).
  */
 export async function loadOrsQuota() {
     try {
         const {data} = await supabase.from('settings').select('value').eq('key', 'ors_quota').single();
         if (data?.value) {
-            orsQuota.remaining = data.value.remaining;
-            orsQuota.limit = data.value.limit;
-            if (orsQuota.remaining != null && orsQuota.remaining <= 0) {
-                orsQuota.exhausted = true;
+            // Controlla se il dato è di oggi o di un giorno precedente
+            const savedDate = data.value.updated_at ? new Date(data.value.updated_at).toDateString() : null;
+            const today = new Date().toDateString();
+
+            if (savedDate && savedDate !== today) {
+                // Nuovo giorno: resetta quota
+                orsQuota.remaining = data.value.limit ?? null;
+                orsQuota.limit = data.value.limit ?? null;
+                orsQuota.exhausted = false;
+            } else {
+                orsQuota.remaining = data.value.remaining;
+                orsQuota.limit = data.value.limit;
+                if (orsQuota.remaining != null && orsQuota.remaining <= 0) {
+                    orsQuota.exhausted = true;
+                }
             }
             notifyQuotaUpdate();
         }
@@ -280,8 +334,11 @@ export async function loadOrsQuota() {
  * @returns {Promise<number[][] | null>} Array di [lon, lat] oppure null se non disponibile
  */
 export async function fetchTrailRouteSegment(startPoint, endPoint) {
-    // Se quota esaurita, non fare la chiamata
+    // Se quota giornaliera esaurita, non fare la chiamata
     if (orsQuota.exhausted) return null;
+
+    // Rate limit: max 40 req/minuto (condiviso tra tutti gli utenti)
+    if (!(await canMakeRequest())) return null;
 
     const apiKey = import.meta.env.VITE_ORS_API_KEY;
     // TODO: verrà deprecato ad agosto 2026
