@@ -1,5 +1,0 @@
-[functions.ors-route]
-# Disabilita la verifica JWT a livello di gateway per questa funzione.
-# La funzione gestisce l'autenticazione internamente tramite supabase.auth.getUser(),
-# permettendo così alle richieste OPTIONS (preflight CORS) di passare senza 401.
-verify_jwt = false

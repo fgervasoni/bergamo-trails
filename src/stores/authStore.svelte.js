@@ -24,9 +24,17 @@ export function isAdmin() {
 export async function initAuth() {
     authState.loading = true;
     try {
-        const { data: { session } } = await supabase.auth.getSession();
-        authState.session = session;
-        authState.user = session?.user ?? null;
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+            // Token stale o corrotto in localStorage: pulisci e forza logout silenzioso
+            console.warn('Sessione non valida, pulizia in corso:', error.message);
+            await supabase.auth.signOut();
+            authState.session = null;
+            authState.user = null;
+        } else {
+            authState.session = session;
+            authState.user = session?.user ?? null;
+        }
     } catch (err) {
         console.error('Errore inizializzazione auth:', err);
         authState.session = null;
@@ -35,9 +43,12 @@ export async function initAuth() {
         authState.loading = false;
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        authState.session = session;
-        authState.user = session?.user ?? null;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+            // Aggiorna lo stato per tutti gli eventi di sessione rilevanti
+            authState.session = session;
+            authState.user = session?.user ?? null;
+        }
     });
 
     // Restituisce la funzione di cleanup per evitare memory leak
