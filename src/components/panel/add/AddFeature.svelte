@@ -26,6 +26,7 @@
     let clickHandler = null;
     let previewGraphic = null;
     let gpsLoading = $state(false);
+    let gpsError = $state(false);
 
     // Trail drawing state
     let trailPoints = $state([]);
@@ -56,6 +57,7 @@
         featureType = type;
         formValues = {};
         saveStatus = '';
+        gpsError = false;
         selectedPoint = null;
         trailPoints = [];
         routedSegments = [];
@@ -75,6 +77,7 @@
         featureType = '';
         formValues = {};
         saveStatus = '';
+        gpsError = false;
         selectedPoint = null;
         trailPoints = [];
         routedSegments = [];
@@ -141,8 +144,9 @@
 
     // --- Use current GPS position ---
     function useCurrentPosition() {
+        gpsError = false;
         if (!navigator.geolocation) {
-            saveStatus = 'error';
+            gpsError = true;
             return;
         }
         gpsLoading = true;
@@ -152,15 +156,17 @@
                 selectedPoint = {longitude, latitude};
                 showPointPreview(longitude, latitude);
                 gpsLoading = false;
+                gpsError = false;
                 // Center map on position
                 const view = mapState.view;
                 if (view) {
                     view.goTo({center: [longitude, latitude], zoom: 15}, {duration: 600});
                 }
             },
-            () => {
+            (err) => {
+                console.error('Errore GPS:', err.message);
                 gpsLoading = false;
-                alert(t.addFeature.gpsNotAvailable);
+                gpsError = true;
             },
             {enableHighAccuracy: true, timeout: 10000}
         );
@@ -366,7 +372,7 @@
             } else {
                 // Utente normale: invia richiesta
                 const result = await submitRequest(
-                    'create', currentLayerTitle, record, null, authState.user?.email
+                    'create', currentLayerTitle, record, null
                 );
                 if (result.success) {
                     saveStatus = 'requested';
@@ -477,6 +483,9 @@
                                 {t.addFeature.useCurrentPosition}
                             </button>
                         </div>
+                        {#if gpsError}
+                            <span class="cai-add-status error">{t.addFeature.gpsNotAvailable}</span>
+                        {/if}
                     </div>
                 {/if}
 

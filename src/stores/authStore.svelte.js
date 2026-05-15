@@ -19,6 +19,7 @@ export function isAdmin() {
 /**
  * Inizializza l'auth: legge la sessione corrente e ascolta i cambiamenti.
  * Chiamare una volta sola in onMount dell'app.
+ * @returns {() => void} Funzione di cleanup per disiscrizione — chiamare in onDestroy.
  */
 export async function initAuth() {
     authState.loading = true;
@@ -26,17 +27,21 @@ export async function initAuth() {
         const { data: { session } } = await supabase.auth.getSession();
         authState.session = session;
         authState.user = session?.user ?? null;
-    } catch {
+    } catch (err) {
+        console.error('Errore inizializzazione auth:', err);
         authState.session = null;
         authState.user = null;
     } finally {
         authState.loading = false;
     }
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         authState.session = session;
         authState.user = session?.user ?? null;
     });
+
+    // Restituisce la funzione di cleanup per evitare memory leak
+    return () => subscription.unsubscribe();
 }
 
 /**

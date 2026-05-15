@@ -227,41 +227,8 @@ export async function fetchTrailsToDestination(destType, destId, radiusMeters = 
  */
 export const orsQuota = {remaining: null, limit: 2000, exhausted: false};
 
-/** Rate limiter: max 40 richieste per minuto (condiviso tra tutti gli utenti via DB) */
-const RATE_LIMIT_PER_MINUTE = 40;
-
-/**
- * Controlla e aggiorna il rate limit al minuto salvato su DB (condiviso tra utenti).
- * @returns {Promise<boolean>} true se la richiesta può essere fatta
- */
-async function canMakeRequest() {
-    try {
-        const {data} = await supabase.from('settings').select('value').eq('key', 'ors_minute_rate').single();
-        const now = Date.now();
-        let timestamps = [];
-
-        if (data?.value?.timestamps) {
-            // Filtra timestamp più vecchi di 60 secondi
-            timestamps = data.value.timestamps.filter(ts => now - ts < 60000);
-        }
-
-        if (timestamps.length >= RATE_LIMIT_PER_MINUTE) {
-            return false;
-        }
-
-        // Aggiungi il timestamp corrente con email utente e salva
-        const email = (await supabase.auth.getUser())?.data?.user?.email ?? 'unknown';
-        timestamps.push(now);
-        await supabase.from('settings').upsert({
-            key: 'ors_minute_rate',
-            value: {timestamps, last_user: email}
-        }, {onConflict: 'key'});
-
-        return true;
-    } catch (_) {
-        return true;
-    }
-}
+// canMakeRequest() rimosso: il rate limiting è ora gestito atomicamente
+// dalla Edge Function `ors-route` tramite la stored procedure `check_ors_rate_limit`.
 
 /** Callback opzionale per notificare aggiornamenti quota alla UI */
 let _onQuotaUpdate = null;
@@ -331,9 +298,9 @@ export async function loadOrsQuota() {
 }
 
 /**
- * Calcola un segmento di percorso tra due punti seguendo il grafo stradale/sentieristico OSM.
- * Usa OpenRouteService con profilo "foot-hiking" (escursionismo).
- * API docs: https://openrouteservice.org/dev/#/api-docs/v2/directions
+ * Calcola un segmento di percorso tra due punti seguendo il grafo sentieristico OSM.
+ * La chiamata viene proxata tramite la Supabase Edge Function `ors-route`,
+ * che mantiene la API key server-side e gestisce il rate limiting atomico via DB.
  *
  * @param {{longitude: number, latitude: number}} startPoint
  * @param {{longitude: number, latitude: number}} endPoint
@@ -343,45 +310,30 @@ export async function fetchTrailRouteSegment(startPoint, endPoint) {
     // Se quota giornaliera esaurita, non fare la chiamata
     if (orsQuota.exhausted) return null;
 
-    // Rate limit: max 40 req/minuto (condiviso tra tutti gli utenti)
-    if (!(await canMakeRequest())) return null;
-
-    const apiKey = import.meta.env.VITE_ORS_API_KEY;
-    // TODO: verrà deprecato ad agosto 2026
-    // const url = 'https://api.heigit.org/openrouteservice/v2/directions/foot-hiking/geojson';
-    const url = 'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson';
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/ors-route`;
 
     try {
-        const response = await fetch(url, {
+        // Recupera il token di sessione corrente per autenticare la Edge Function
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return null;
+
+        const response = await fetch(edgeFunctionUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': apiKey
+                'Authorization': `Bearer ${session.access_token}`
             },
-            body: JSON.stringify({
-                coordinates: [
-                    [startPoint.longitude, startPoint.latitude],
-                    [endPoint.longitude, endPoint.latitude]
-                ]
-            })
+            body: JSON.stringify({ startPoint, endPoint })
         });
 
-        // Leggi quota dagli header (potrebbe non funzionare via CORS)
-        const remaining = response.headers.get('x-ratelimit-remaining');
-        const limit = response.headers.get('x-ratelimit-limit');
-        if (remaining != null) {
-            orsQuota.remaining = parseInt(remaining, 10);
-        } else {
-            // Fallback: decrementa manualmente
-            if (orsQuota.remaining != null) {
-                orsQuota.remaining = Math.max(0, orsQuota.remaining - 1);
-            }
-        }
-        if (limit != null) orsQuota.limit = parseInt(limit, 10);
-
         if (response.status === 429) {
-            orsQuota.exhausted = true;
-            orsQuota.remaining = 0;
+            // Rate limit raggiunto (quota minuto o giornaliera)
+            const body = await response.json().catch(() => ({}));
+            if (body.error === 'quota_exhausted') {
+                orsQuota.exhausted = true;
+                orsQuota.remaining = 0;
+            }
             notifyQuotaUpdate();
             persistOrsQuota();
             return null;
@@ -389,22 +341,34 @@ export async function fetchTrailRouteSegment(startPoint, endPoint) {
 
         if (!response.ok) return null;
 
-        if (orsQuota.remaining != null && orsQuota.remaining <= 0) {
-            orsQuota.exhausted = true;
-        }
-        notifyQuotaUpdate();
-        persistOrsQuota();
-
         const data = await response.json();
-        const coordinates = data?.features?.[0]?.geometry?.coordinates;
 
+        // Aggiorna quota dalla risposta della Edge Function
+        if (data.quota != null) {
+            orsQuota.remaining = data.quota.remaining;
+            if (data.quota.limit != null) orsQuota.limit = data.quota.limit;
+            if (orsQuota.remaining != null && orsQuota.remaining <= 0) {
+                orsQuota.exhausted = true;
+            }
+            notifyQuotaUpdate();
+            persistOrsQuota();
+        } else {
+            // Fallback: decrementa manualmente
+            if (orsQuota.remaining != null) {
+                orsQuota.remaining = Math.max(0, orsQuota.remaining - 1);
+                notifyQuotaUpdate();
+                persistOrsQuota();
+            }
+        }
+
+        const coordinates = data?.features?.[0]?.geometry?.coordinates;
         if (!Array.isArray(coordinates) || coordinates.length < 2) {
             return null;
         }
 
         return coordinates; // [[lon, lat], [lon, lat], ...]
     } catch (e) {
-        console.warn('Routing OpenRouteService non disponibile, uso fallback lineare:', e.message);
+        console.warn('Routing ORS non disponibile, uso fallback lineare:', e.message);
         return null;
     }
 }

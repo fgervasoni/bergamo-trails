@@ -24,10 +24,11 @@
     import {initTheme, setTheme, themeState} from './stores/themeStore.svelte.js';
     import {authState, initAuth, isAdmin, login, logout, register} from './stores/authStore.svelte.js';
     import {orsQuota, setOrsQuotaCallback, loadOrsQuota} from './services/trailsService.js';
-    import {onMount} from 'svelte';
+    import {onMount, onDestroy} from 'svelte';
 
     let t = $derived(getT());
     let loading = $state(true);
+    let _authCleanup = null;
 
     function toggleMobileAdd() {
         uiState.mobileAddOpen = !uiState.mobileAddOpen;
@@ -37,9 +38,14 @@
         }
     }
 
+    onDestroy(() => {
+        if (_authCleanup) _authCleanup();
+    });
+
     // Auth form state
     let authEmail = $state('');
     let authPassword = $state('');
+    let authPasswordConfirm = $state('');
     let authLoading = $state(false);
     let authError = $state('');
     let authMode = $state('login'); // 'login' | 'register'
@@ -49,9 +55,9 @@
     let showGyroPrompt = $state(false);
     let locateButtonRef = $state(null);
 
-    onMount(() => {
+    onMount(async () => {
         initTheme();
-        initAuth();
+        _authCleanup = await initAuth();
         // Wire ORS quota updates to reactive state
         setOrsQuotaCallback((q) => {
             orsQuotaState.remaining = q.remaining;
@@ -99,18 +105,29 @@
     async function handleRegister(e) {
         e.preventDefault();
         if (!authEmail.trim() || !authPassword) return;
-        authLoading = true;
         authError = '';
         authSuccess = '';
+        // Validazione client-side
+        if (authPassword.length < 6) {
+            authError = t.auth.passwordTooShort;
+            return;
+        }
+        if (authPassword !== authPasswordConfirm) {
+            authError = t.auth.passwordMismatch;
+            return;
+        }
+        authLoading = true;
         const result = await register(authEmail.trim(), authPassword);
         if (!result.success) {
             authError = t.auth.registerError;
         } else if (result.needsConfirmation) {
             authSuccess = t.auth.confirmEmail;
             authPassword = '';
+            authPasswordConfirm = '';
         } else {
             authEmail = '';
             authPassword = '';
+            authPasswordConfirm = '';
         }
         authLoading = false;
     }
@@ -119,6 +136,8 @@
         authMode = authMode === 'login' ? 'register' : 'login';
         authError = '';
         authSuccess = '';
+        authPassword = '';
+        authPasswordConfirm = '';
     }
 
     async function handleLogout() {
@@ -307,6 +326,17 @@
                                 autocomplete={authMode === 'login' ? 'current-password' : 'new-password'}
                                 minlength={authMode === 'register' ? 6 : undefined}
                         />
+                        {#if authMode === 'register'}
+                            <input
+                                    class="cai-auth-input"
+                                    type="password"
+                                    placeholder={t.auth.confirmPassword}
+                                    bind:value={authPasswordConfirm}
+                                    disabled={authLoading}
+                                    required
+                                    autocomplete="new-password"
+                            />
+                        {/if}
                         {#if authError}
                             <span class="cai-auth-error">{authError}</span>
                         {/if}

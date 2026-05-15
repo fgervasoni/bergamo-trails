@@ -237,7 +237,7 @@
             } else {
                 // Utente normale: invia richiesta
                 const result = await submitRequest(
-                    'update', cachedLayerTitle, updates, cachedFeatureId, authState.user?.email
+                    'update', cachedLayerTitle, updates, cachedFeatureId
                 );
                 if (result.success) {
                     cleanupPreview();
@@ -288,7 +288,7 @@
             } else {
                 // Utente normale: invia richiesta di eliminazione con motivazione
                 const result = await submitRequest(
-                    'delete', cachedLayerTitle, {reason: deleteReason.trim()}, cachedFeatureId, authState.user?.email
+                    'delete', cachedLayerTitle, {reason: deleteReason.trim()}, cachedFeatureId
                 );
                 if (result.success) {
                     saveStatus = 'requested';

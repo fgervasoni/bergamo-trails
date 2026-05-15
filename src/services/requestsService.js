@@ -2,6 +2,8 @@ import { supabase } from '../lib/supabaseClient.js';
 
 /**
  * Invia una richiesta di modifica (create/update/delete) per approvazione admin.
+ * L'email utente viene ricavata server-side da supabase.auth.getUser()
+ * per evitare che il client possa impersonare altri utenti.
  *
  * Tabella Supabase `requests`:
  *   id (bigint, auto), user_email (text),
@@ -16,12 +18,17 @@ import { supabase } from '../lib/supabaseClient.js';
  * @param {string} layer - 'Rifugi' | 'Sentieri' | 'Vette'
  * @param {object} payload - Dati della richiesta (campi nuovi per create/update, vuoto per delete)
  * @param {number|string|null} featureId - ID feature (null per create)
- * @param {string} userEmail - Email dell'utente che invia
  * @returns {Promise<{success: boolean, error: string|null}>}
  */
-export async function submitRequest(action, layer, payload, featureId, userEmail) {
+export async function submitRequest(action, layer, payload, featureId) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user?.email) {
+        console.error('submitRequest: utente non autenticato', authError);
+        return { success: false, error: 'Non autenticato' };
+    }
+
     const { error } = await supabase.from('requests').insert({
-        user_email: userEmail,
+        user_email: user.email,
         action,
         layer,
         feature_id: featureId ?? null,
@@ -53,41 +60,27 @@ export async function fetchPendingRequests() {
 }
 
 /**
- * Approva una richiesta: esegue l'azione e aggiorna lo status.
+ * Approva una richiesta in modo atomico tramite stored procedure SQL.
+ * La funzione `approve_request` esegue l'azione sul DB e aggiorna lo status
+ * in un'unica transazione con lock (FOR UPDATE), prevenendo doppia esecuzione.
  * @param {object} request - Oggetto richiesta dal DB
  * @returns {Promise<{success: boolean, error: string|null}>}
  */
 export async function approveRequest(request) {
-    const { id, action, layer, feature_id, data: payload } = request;
+    const { data, error } = await supabase.rpc('approve_request', {
+        p_request_id: request.id
+    });
 
-    const tableMap = { Rifugi: 'rifugi', Sentieri: 'sentieri', Vette: 'vette' };
-    const table = tableMap[layer];
-    if (!table) return { success: false, error: 'Layer non valido' };
-
-    let opError = null;
-
-    try {
-        if (action === 'create') {
-            const { error } = await supabase.from(table).insert(payload);
-            opError = error;
-        } else if (action === 'update') {
-            const { error } = await supabase.from(table).update(payload).eq('id', feature_id);
-            opError = error;
-        } else if (action === 'delete') {
-            const { error } = await supabase.from(table).delete().eq('id', feature_id);
-            opError = error;
-        }
-    } catch (e) {
-        return { success: false, error: e.message };
+    if (error) {
+        console.error('Errore approvazione richiesta (RPC):', error);
+        return { success: false, error: error.message };
     }
 
-    if (opError) {
-        console.error('Errore esecuzione richiesta:', opError);
-        return { success: false, error: opError.message };
+    if (!data?.success) {
+        console.error('Errore approvazione richiesta:', data?.error);
+        return { success: false, error: data?.error ?? 'Errore sconosciuto' };
     }
 
-    // Aggiorna status a 'approved'
-    await supabase.from('requests').update({ status: 'approved' }).eq('id', id);
     return { success: true, error: null };
 }
 
@@ -129,15 +122,22 @@ export async function fetchUserRequests(userEmail) {
 }
 
 /**
- * Elimina una richiesta (l'utente può rimuovere le proprie già processate).
+ * Elimina una richiesta (l'utente può rimuovere solo le proprie già processate).
+ * Il filtro su user_email è ridondante con la policy RLS, ma aggiunge difesa in profondità.
  * @param {number|string} requestId
  * @returns {Promise<{success: boolean, error: string|null}>}
  */
 export async function deleteRequest(requestId) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user?.email) {
+        return { success: false, error: 'Non autenticato' };
+    }
+
     const { error } = await supabase
         .from('requests')
         .delete()
-        .eq('id', requestId);
+        .eq('id', requestId)
+        .eq('user_email', user.email); // difesa in profondità oltre la RLS
     if (error) {
         console.error('Errore eliminazione richiesta:', error);
         return { success: false, error: error.message };
